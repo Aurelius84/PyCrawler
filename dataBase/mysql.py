@@ -83,26 +83,56 @@ class M(DB):
         pass
 
     def insertOne(self, table, data):
+        '''
+        单条数据插入
+        :param table:指定插入的表名
+        :param data:插入数据 dict格式
+        :return:
+        '''
         if not isinstance(data, dict):
             raise KeyError("Insert data is not a dict")
         if not dict:
             raise ValueError("data is empty!")
-
+        # sql语句格式
         sql = "insert into {0}({1}) values({2})".format(
             table, ','.join(data.keys()), ','.join(['%s'] * len(data.keys())))
+        # 数据格式
         param = tuple(data.values())
-        # print(param)
         try:
+            # 插入数据
             retrun_n = DB.cursor(self).execute(sql, param)
-            DB.commit(self)
-            print 'insert', retrun_n
-        except KeyError:
+        except:
             raise('Failed insert data.')
-        DB.close(self)
+        # 提交事务
+        DB.commit(self)
+        print 'insert', retrun_n
+
+    def insertAll(self,table,data):
+        '''
+        多条数据插入
+        :param table: 指定插入表名
+        :param data: 多条数据 [dict,dict]
+        :return:
+        '''
+        if not (data and isinstance(data,list) and isinstance(data[0],dict)):
+            raise KeyError('Insert data is illegal!')
+        # sql语句格式
+        sql = "insert into {0}({1}) values({2})".format(
+            table, ','.join(data[0].keys()), ','.join(['%s'] * len(data[0].keys())))
+        # 数据格式
+        param = tuple(map(lambda x:tuple(x.values()),data))
+        try:
+            # 多条插入数据
+            retrun_n = DB.cursor(self).executemany(sql, param)
+        except:
+            raise('Failed insert data.')
+        # 提交事务
+        DB.commit(self)
+        print 'insert', retrun_n
 
 if __name__ == '__main__':
-    db_test = DB()
+    db_test = DB('test')
     table_test = M()
 
-    data = {'id': 3, 'name': 'Ruler', 'create_time': '0987654321'}
-    table_test.insertOne('test', data)
+    data = [{'name': 'Evd', 'create_time': int(time.time())},{'name': 'Fvd', 'create_time': int(time.time())}]
+    table_test.insertAll('test2', data)

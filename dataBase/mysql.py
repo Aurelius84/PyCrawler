@@ -14,7 +14,6 @@
 import MySQLdb
 import time
 
-
 class DB(object):
     # 实例化数据库
 
@@ -69,9 +68,10 @@ class DB(object):
 
 class M(DB):
 
-    def __init__(self):
+    def __init__(self,db_name,table_name):
         # 继承DB类
-        DB.__init__(self)
+        DB.__init__(self,db_name=db_name)
+        self.table = table_name
 
     def creatTable(self, args_dict):  # Todo 前期先在mysql手动建表
         '''
@@ -82,7 +82,7 @@ class M(DB):
         '''
         pass
 
-    def insertOne(self, table, data):
+    def insertOne(self, data):
         '''
         单条数据插入
         :param table:指定插入的表名
@@ -95,7 +95,7 @@ class M(DB):
             raise ValueError("data is empty!")
         # sql语句格式
         sql = "insert into {0}({1}) values({2})".format(
-            table, ','.join(data.keys()), ','.join(['%s'] * len(data.keys())))
+            self.table, ','.join(data.keys()), ','.join(['%s'] * len(data.keys())))
         # 数据格式
         param = tuple(data.values())
         try:
@@ -107,7 +107,7 @@ class M(DB):
         DB.commit(self)
         print 'insert', retrun_n
 
-    def insertAll(self,table,data):
+    def insertAll(self,data):
         '''
         多条数据插入
         :param table: 指定插入表名
@@ -118,7 +118,7 @@ class M(DB):
             raise KeyError('Insert data is illegal!')
         # sql语句格式
         sql = "insert into {0}({1}) values({2})".format(
-            table, ','.join(data[0].keys()), ','.join(['%s'] * len(data[0].keys())))
+            self.table, ','.join(data[0].keys()), ','.join(['%s'] * len(data[0].keys())))
         # 数据格式
         param = tuple(map(lambda x:tuple(x.values()),data))
         try:
@@ -130,9 +130,16 @@ class M(DB):
         DB.commit(self)
         print 'insert', retrun_n
 
-if __name__ == '__main__':
-    db_test = DB('test')
-    table_test = M()
+    def close(self):
+        '''
+        关闭数据库连接
+        :return:
+        '''
+        DB.close(self)
 
-    data = [{'name': 'Evd', 'create_time': int(time.time())},{'name': 'Fvd', 'create_time': int(time.time())}]
-    table_test.insertAll('test2', data)
+if __name__ == '__main__':
+    # 实例化库 和 表
+    table_test = M(db_name='test2',table_name='test')
+    # 数据测试
+    data = [{'name': 'Wvd', 'create_time': int(time.time())},{'name': 'Vvd', 'create_time': int(time.time())}]
+    table_test.insertAll(data)

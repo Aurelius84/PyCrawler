@@ -15,11 +15,15 @@ import time
 
 
 class ETL(M):
+    """
+    去重及批处理入库逻辑
+    """
 
     def __init__(self, db_name, table_name, data):
         if not (db_name and table_name):
             raise ValueError("db_name or table_name is empty!")
         M.__init__(self, db_name, table_name)
+        # 数据库名
         self.db = db_name
         self.table = table_name
         self.data = data
@@ -118,10 +122,10 @@ class ETL(M):
                 self.data.append(one_data)
         return self.data
 
-if __name__ == '__main__':
-    # self.key_fields = ['price', 'name', 'pics', 'type',
-    #                        'detail', 'source_url', 'storage', 'lack_period']
-    data = [{'price':10.4,'name':'风机','pics':'pic0|pic2','type':'封闭式','detail':'aaaa','source_url':'http://gaegagg.com'},\
-            {'price':12.4,'name':'股风机','pics':'pic0|pic2','type':'封闭式','detail':'aaaa','source_url':'http://gaegagg.com'},\
-            ]
-    ETL('test','test',data).run()
+# if __name__ == '__main__':
+#     # self.key_fields = ['price', 'name', 'pics', 'type',
+#     #                        'detail', 'source_url', 'storage', 'lack_period']
+#     data = [{'price':10.4,'name':'风机','pics':'pic0|pic2','type':'封闭式','detail':'aaaa','source_url':'http://gaegagg.com'},\
+#             {'price':12.4,'name':'股风机','pics':'pic0|pic2','type':'封闭式','detail':'aaaa','source_url':'http://gaegagg.com'},\
+#             ]
+#     ETL('test','test',data).run()

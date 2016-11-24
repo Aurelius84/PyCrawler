@@ -16,7 +16,6 @@ import time
 
 class DB(object):
     # 实例化数据库
-
     def __init__(self, db_name='test'):
         # 连接数据库
         self.connect = MySQLdb.connect(
@@ -101,11 +100,12 @@ class M(DB):
         try:
             # 插入数据
             retrun_n = DB.cursor(self).execute(sql, param)
+            print 'insert', retrun_n
         except:
-            raise('Failed insert data.')
+            raise Exception('Failed insert data.')
         # 提交事务
         DB.commit(self)
-        print 'insert', retrun_n
+
 
     def insertAll(self,data):
         '''
@@ -124,11 +124,12 @@ class M(DB):
         try:
             # 多条插入数据
             retrun_n = DB.cursor(self).executemany(sql, param)
+            print 'insert', retrun_n
         except:
-            raise('Failed insert data.')
+            raise Exception('Failed insert data.')
         # 提交事务
         DB.commit(self)
-        print 'insert', retrun_n
+
 
     def close(self):
         '''
@@ -137,9 +138,9 @@ class M(DB):
         '''
         DB.close(self)
 
-if __name__ == '__main__':
-    # 实例化库 和 表
-    table_test = M(db_name='test2',table_name='test')
-    # 数据测试
-    data = [{'name': 'Wvd', 'create_time': int(time.time())},{'name': 'Vvd', 'create_time': int(time.time())}]
-    table_test.insertAll(data)
+# if __name__ == '__main__':
+#     # 实例化库 和 表
+#     table_test = M(db_name='test',table_name='test')
+#     # 数据测试
+#     data = [{'price':10.4,'name':'风机','pics':'pic0|pic2','type':'封闭式','detail':'aaaa','source_url':'http://gaegagg.com'}]
+#     table_test.insertAll(data)

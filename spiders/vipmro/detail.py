@@ -17,6 +17,46 @@ from collections import defaultdict
 import itertools
 import time
 
+def goodsOutline(url):
+    '''
+    获取三级目录详情
+    :param url:网站主页
+    :return:[{'url':'','first_grade':'',...},...{}]
+    '''
+    # 存储各级分类信息
+    outline_data = []
+    # 解析页面
+    body = getHtmlFromJs(url)['content'].encode('utf-8')
+    html = HtmlResponse(url=url,body=body)
+    # 一级类目名
+    first_grade = html.selector.xpath('/html/body/div[3]/div/ul/li[1]/div/div[1]/ul/li/a/text()').extract()
+    # 去掉后两个
+    for i in xrange(len(first_grade)-2):
+        # 二级类目名
+        #/html/body/div[3]/div/ul/li[1]/div/div[2]/div[1]/div[1]
+        #/html/body/div[3]/div/ul/li[1]/div/div[2]/div[3]/div[1]
+        second_grade = html.selector.xpath('/html/body/div[3]/div/ul/li[1]/div/div[2]/div[{0}]/div/span/a/text()'.format(i+1)).extract()
+        print('second: {0}'.format(len(second_grade)))
+        for j in xrange(len(second_grade)):
+            # 三级类目名和链接url
+            # /html/body/div[3]/div/ul/li[1]/div/div[2]/div[1]/div[1]/ul/li[1]/a
+            # /html/body/div[3]/div/ul/li[1]/div/div[2]/div[1]/div[2]/ul/li[1]/a
+            third_grade_name = html.selector.xpath('/html/body/div[3]/div/ul/li[1]/div/div[2]/div[{0}]/div[{1}]/ul/li/a/text()'.format(i+1,j+1)).extract()
+            third_grade_url = html.selector.xpath('/html/body/div[3]/div/ul/li[1]/div/div[2]/div[{0}]/div[{1}]/ul/li/a/@href'.format(i+1,j+1)).extract()
+            print(len(third_grade_name))
+            for k in xrange(len(third_grade_name)):
+                # 格式化数据
+                url_data = defaultdict()
+                url_data['url'] = third_grade_url[k]
+                url_data['third_grade'] = third_grade_name[k]
+                url_data['second_grade'] = second_grade[j]
+                url_data['first_grade'] = first_grade[i]
+                url_data['created'] = int(time.time())
+                url_data['updated'] = int(time.time())
+                # 保存
+                outline_data.append(url_data)
+    return outline_data
+
 
 def goodsUrlList(home_url):
     '''
@@ -102,6 +142,8 @@ def parseOptional(url):
 
 if __name__ == '__main__':
     # url = 'http://www.vipmro.com/product/587879'
-    url = 'http://www.vipmro.com/search/?&categoryId=501110'
-    goodsUrlList(url)
+    # url = 'http://www.vipmro.com/search/?&categoryId=501110'
+    url = 'http://www.vipmro.com/'
+    goodsOutline(url)
+
 

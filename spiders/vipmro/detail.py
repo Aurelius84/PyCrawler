@@ -12,10 +12,10 @@
 """
 
 from spiders.myfunc import *
-from scrapy.http import HtmlResponse,Request,Response
+from scrapy.http import HtmlResponse
 from collections import defaultdict
 import time
-import chardet
+
 
 def goodsUrlList(home_url):
     pass
@@ -26,7 +26,6 @@ def goodsDetail(detail_url):
     :param detail_url: 详情页url
     :return: 各个字段信息 dict
     '''
-
     goods_data = defaultdict()
     # 详情页链接
     goods_data['source_url'] = detail_url

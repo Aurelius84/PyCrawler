@@ -104,4 +104,5 @@ if __name__ == '__main__':
     # url = 'http://www.vipmro.com/product/587879'
     url = 'http://www.vipmro.com/search/?&categoryId=501110'
     goodsUrlList(url)
+    print("it works")
 

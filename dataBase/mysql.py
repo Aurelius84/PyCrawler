@@ -12,6 +12,7 @@
 """
 
 import MySQLdb
+import MySQLdb.cursors
 import time
 
 class DB(object):
@@ -24,7 +25,9 @@ class DB(object):
             user='root',
             passwd='zlj521226',
             db=db_name,
-            charset='utf8'
+            charset='utf8',
+            # 返回字典形式
+            cursorclass=MySQLdb.cursors.DictCursor
         )
         # 获取游标
         self.cursor = self.connect.cursor()
@@ -125,8 +128,8 @@ class M(DB):
             # 多条插入数据
             retrun_n = DB.cursor(self).executemany(sql, param)
             print 'insert', retrun_n
-        except:
-            raise Exception('Failed insert data.')
+        except Exception,e:
+            print(Exception,":",e)
         # 提交事务
         DB.commit(self)
 

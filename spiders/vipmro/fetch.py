@@ -76,10 +76,15 @@ def parseSeedUrl():
             insert_data.append(seed_data)
         # 插入数据库
         table_seed.insertAll(insert_data)
+    # 关闭数据库
     table_seed.close()
     table_outline.close()
 
 def parseDetail():
+    '''
+    解析详情函数入口
+    :return:
+    '''
     table_seed_name = 'vipmro_url'
     table_detail_name = 'vipmro_detail'
     table_seed = M('test',table_seed_name)

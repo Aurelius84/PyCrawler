@@ -19,6 +19,59 @@ import time
 import re
 import chardet
 
+def goodsOutline(url):
+    '''
+    获取三级目录详情
+    :param url:网站主页
+    :return:[{'url':'','first_grade':'',...},...{}]
+    '''
+    # 存储各级分类信息
+    outline_data = []
+    # 解析页面
+    body = getHtml(url)
+    html = HtmlResponse(url=url,body=body)
+    # 一级类目名
+    first_grade = [u'建筑 矿用 防爆',u'泵 阀门']
+    #预存一部分XPATH的基址
+    basepath = ['//*[@id="newpro101"]/div[2]/ul','//*[@id="newpro401"]/div[2]/ul']
+    #//*[@id="newpro4"]/h3/a 泵 阀门 
+    for i in xrange(len(first_grade)):
+        # 二级类目名
+        if i == 0: 
+            #建筑 矿用 防爆
+            second_grade = html.selector.xpath(basepath[i]+u'/li/b/a/text()').extract()[1:9]
+        else:
+            second_grade = html.selector.xpath(basepath[i]+u'/li/b/a/text()').extract()
+        #print u'二级目录个数' + str(len(second_grade))
+        for j in xrange(len(second_grade)):
+            # 三级类目名和链接url
+            # //*[@id="newpro101"]/div[2]/ul/li[3]/a[1]
+            #//*[@id="newpro401"]/div[2]/ul/li[6]/a[1]
+            if i == 0:
+                third_grade_name = html.selector.xpath(basepath[i]+'/li[{0}]/a/text()'.format(j+2)).extract()
+                third_grade_url = html.selector.xpath(basepath[i]+'/li[{0}]/a/@href'.format(j+2)).extract()
+            else:
+                third_grade_name = html.selector.xpath(basepath[i]+'/li[{0}]/a/text()'.format(j+1)).extract()
+                third_grade_url = html.selector.xpath(basepath[i]+'/li[{0}]/a/@href'.format(j+1)).extract()
+            print('三级目录个数：'+str(len(third_grade_name)))
+            for k in xrange(len(third_grade_name)):
+                # 格式化数据
+                url_data = defaultdict()
+                url_data['url'] ='http://www.runlian365.com/' + third_grade_url[k]
+                url_data['third_grade'] = third_grade_name[k]
+                url_data['second_grade'] = second_grade[j]
+                url_data['first_grade'] = first_grade[i]
+                url_data['created'] = int(time.time())
+                url_data['updated'] = int(time.time())
+                
+                #print  url_data['first_grade'] + ':' + url_data['second_grade']+ ':'+url_data['third_grade']
+                # 保存
+                outline_data.append(url_data)
+            
+
+    return outline_data
+
+ 
 
 def goodsUrlList(home_url):
     '''
@@ -106,6 +159,6 @@ def parse(url):
 
 if __name__ == '__main__':
     # url = 'http://www.vipmro.com/product/587879'
-    url = 'http://www.runlian365.com/product/382.html'
-    goodsUrlList(url)
+    url = 'http://www.runlian365.com'
+    goodsOutline(url)
 

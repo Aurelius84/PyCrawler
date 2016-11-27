@@ -74,12 +74,9 @@ def goodsUrlList(home_url):
         home_page = getHtmlFromJs(url)['content'].encode('utf-8')
         html = HtmlResponse(url=url,body=str(home_page))
         urls = html.selector.xpath('/html/body/div[7]/div[1]/ul/li/div[2]/a/@href').extract()
+        if not urls:
+            continue
         url_list.extend(urls)
-    #     print(len(urls))
-    #     print(urls)
-    #     exit()
-    # print(len(url_list))
-    # print(url_list)
     return url_list
 
 def goodsDetail(detail_url):

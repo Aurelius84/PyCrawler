@@ -12,8 +12,11 @@
 @file: fetch.py
 @time: 16/11/26 下午5:21
 """
+import sys
+import getopt
 from dataBase.mysql import M
 from detail import *
+from dataMin.ETL import ETL
 
 def parseOutline():
     '''
@@ -86,11 +89,12 @@ def parseDetail():
     :return:
     '''
     table_seed_name = 'vipmro_url'
-    table_detail_name = 'vipmro_detail'
+    # 暂时存放到gov表
+    table_gov_name = 'vipmro_gov'
     table_seed = M('test',table_seed_name)
-    table_detail = M('test',table_detail_name)
+    table_gov = M('test',table_gov_name)
     # 查询未入库种子
-    sql = "select a.id,a.url from {0} a where a.url not in (select source_url from {1} order by id)  order by id".format(table_seed_name,table_detail_name)
+    sql = "select a.id,a.url from {0} a where a.url not in (select source_url from {1} order by id)  order by id".format(table_seed_name,table_gov_name)
     table_seed.cursor.execute(sql)
     seed_urls = table_seed.cursor.fetchall()
     # 抓取详情
@@ -99,10 +103,83 @@ def parseDetail():
         detail = goodsDetail(seed['url'])
         insert_data.append(detail)
     # 插入数据库
-    table_detail.insertAll(insert_data)
+    table_gov.insertAll(insert_data)
     # 关闭数据库连接
     table_seed.close()
-    table_detail.close()
+    table_gov.close()
+
+def etl():
+    site = 'vipmro'
+    db_name = 'test'
+    # gov表
+    gov_name = site + '_gov'
+    table_gov = M(db_name,gov_name)
+    # 每次处理量
+    iter_count = 500
+    sql = 'select * from {0} where is_contrast=0 order by id limit {1}'.format(gov_name,iter_count)
+    n = table_gov.cursor.execute(sql)
+    while n:
+        datas = table_gov.cursor.fetchall()
+        # ETL清洗
+        ETL(db_name=db_name,site_name=site,data=datas).run()
+        # 继续查库
+        sql = 'select * from {0} where is_contrast=0 order by id limit {1}'.format(gov_name,iter_count)
+        n = table_gov.cursor.execute(sql)
+    print('ETL process is done!')
+    # 关闭数据库
+    table_gov.close()
+    ETL.close()
+
+def Usage():
+    '''
+    使用说明
+    :return:
+    '''
+    print 'fetch.py usage:'
+    print '-h,--help: print help message.'
+    print '-v, --version: print script version'
+    print '-o, --outline: parse outline and save into table_outline'
+    print '-s, --seed: fetch seed url and insert into table_url'
+    print '-d, --detail: parse detail and insert into table_gov'
+    print '-e, --etl: clean data for table_gov and insert into table_detail'
+def Version():
+    '''
+    版本号
+    :return:
+    '''
+    print 'fetch.py 1.0.0'
+def main(argv):
+    '''
+    程序主入口
+    :param argv:终端参数
+    :return:
+    '''
+    try:
+        opts, args = getopt.getopt(argv[1:], 'hvo:', ['output=', 'foo=', 'fre='])
+    except getopt.GetoptError, err:
+        print str(err)
+        Usage()
+        sys.exit(2)
+    for o, a in opts:
+        if o in ('-h', '--help'):
+            Usage()
+            sys.exit(1)
+        elif o in ('-v', '--version'):
+            Version()
+            sys.exit(0)
+        elif o in ('-o', '--outline'):
+            parseOutline()
+            sys.exit(0)
+        elif o in ('-s','--seed',):
+            parseSeedUrl()
+            sys.exit(0)
+        elif o in ('-d','--detail',):
+            parseDetail()
+        elif o in ('-e','--etl',):
+            etl()
+        else:
+            print 'unhandled option'
+            sys.exit(3)
 
 if __name__ == '__main__':
-    parseDetail()
+    main(sys.argv)

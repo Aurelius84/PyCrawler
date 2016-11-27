@@ -14,6 +14,9 @@
 import MySQLdb
 import MySQLdb.cursors
 import time
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 class DB(object):
     # 实例化数据库
@@ -118,7 +121,8 @@ class M(DB):
         :return:
         '''
         if not (data and isinstance(data,list) and isinstance(data[0],dict)):
-            raise KeyError('Insert data is illegal!')
+            print('Insert data is illegal!')
+            return False
         # sql语句格式
         sql = "insert into {0}({1}) values({2})".format(
             self.table, ','.join(data[0].keys()), ','.join(['%s'] * len(data[0].keys())))

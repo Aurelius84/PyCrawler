@@ -147,3 +147,4 @@ if __name__ == '__main__':
     goodsOutline(url)
 
 
+/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/table

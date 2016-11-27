@@ -26,17 +26,24 @@ def goodsUrlList(home_url):
     :param home_url: http://www.vipmro.com/search/?&categoryId=501110
     :return:url列表
     '''
+    # 网站基址
+    base = u'http://www.runlian365.com'
     # 所有条件下的列表
-    all_group_list = parseOptional(home_url)
+    all_group_list = parse(home_url)
     # 保存所有goods的详情页url
     url_list = []
     for url in all_group_list:
         # url = 'http://www.vipmro.com/search/?ram=0.9551325197768372&categoryId=501110&attrValueIds=509805,509801,509806,509807'
         # 解析html
-        home_page = getHtmlFromJs(url)['content'].encode('utf-8')
+        home_page = getHtml(url)
         html = HtmlResponse(url=url,body=str(home_page))
-        urls = html.selector.xpath('/html/body/div[7]/div[1]/ul/li/div[2]/a/@href').extract()
+        urls = html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[1]/div/div/h4/a/@href').extract()
         url_list.extend(urls)
+    for x in xrange(0,len(url_list)):
+        url_list[x] = base + url_list[x]
+        print str(x) + url_list[x] 
+
+
     #     print(len(urls))
     #     print(urls)
     #     exit()
@@ -61,6 +68,7 @@ def goodsDetail(detail_url):
     # 价格(为毛啊1.sub函数第二个参数设置为空输出就没了2.对价格做个lstrip()输出又没了)
     goods_data['price'] = re.sub(ur'^.{3}',' ',html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[1]/b/text()').extract()[0]).replace(' ','')
     # 型号
+    table = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/table').extract()[0]
     goods_data['type'] = re.sub(ur'^.{3}','',html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[2]/span[1]/font[2]/text()').extract()[0],count = 1)
     # 详情
     goods_data['detail'] = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]').extract()[0]
@@ -75,32 +83,29 @@ def goodsDetail(detail_url):
     # print(goods_data['detail'])
     return goods_data
 
-def parseOptional(url):
+def parse(url):
     '''
     解析url下页面各种选择项组合的url
     :param url: http://www.vipmro.com/search/?&categoryId=501110
     :return:['http://www.vipmro.com/search/?categoryId=501110&attrValueIds=509801,512680,509807,509823']
     '''
     # 解析html
-    home_page = getHtmlFromJs(url)['content'].encode('utf-8')
+    home_page = getHtml(url)
     html = HtmlResponse(url=url,body=str(home_page))
-    # 系列参数
-    xi_lie = html.selector.xpath('/html/body/div[5]/div[6]/ul/li/a/@href').re(r'ValueIds=(\d+)')
-    # 额定极限分断能力
-    fen_duan = html.selector.xpath('/html/body/div[5]/div[10]/ul/li/a/@href').re(r'ValueIds=(\d+)')
-    # 脱扣器形式
-    tuo_kou_qi = html.selector.xpath('/html/body/div[5]/div[14]/ul/li/a/@href').re(r'ValueIds=(\d+)')
-    # 安装方式
-    an_zhuang = html.selector.xpath('/html/body/div[5]/div[12]/ul/li/a/@href').re(r'ValueIds=(\d+)')
-    # 获取所有参数组合
-    all_group = list(itertools.product(xi_lie,fen_duan,tuo_kou_qi,an_zhuang))
-    _url = url + '&attrValueIds='
-    url_list = map(lambda x:_url+','.join(list(x)),all_group)
-
+    #总页数
+    page_total = 1
+    #三级列表下所有
+    url_list = []
+    if html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[2]/div/a[@class = "pages_next"]'):
+        page_total = html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[2]/div/a[last()-1]/text()').extract()[0].replace('...','')
+    elif html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[2]/div/a[last()]/text()'):
+        page_total = html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[2]/div/a[last()]/text()').extract()[0]
+    for x in xrange(1,int(page_total)+1):
+        url_list.append(url.replace('.html','-'+ str(x) + '.html'))
     return url_list
 
 if __name__ == '__main__':
     # url = 'http://www.vipmro.com/product/587879'
-    url = 'http://www.runlian365.com/chanpin/xx-4315.html'
-    goodsDetail(url)
+    url = 'http://www.runlian365.com/product/382.html'
+    goodsUrlList(url)
 

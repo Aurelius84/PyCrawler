@@ -142,5 +142,3 @@ if __name__ == '__main__':
     # url = 'http://www.vipmro.com/search/?&categoryId=501110'
     url = 'http://www.vipmro.com/'
     goodsOutline(url)
-
-

@@ -36,13 +36,13 @@ class ETL():
 
         # 存放脏数据
         self.bad_data = []
-        # 存放干净数据
-        self.clean_data = []
         # 原始数据
         self.data = data
+        # 记录gov_ids
+        self.gov_ids = map(lambda x:unicode(x['id']),self.data)
         self.key_fields = ['price', 'name', 'pics', 'type',
                            'detail', 'source_url', 'storage', 'lack_period']
-        self.key_type = [float, str, str, str, str, str, str, str]
+        self.key_type = [float, unicode, unicode, unicode, unicode, unicode, unicode, unicode]
 
     def run(self):
         # 检查数据类型合法性
@@ -56,13 +56,13 @@ class ETL():
         # 批量插入数据库
         # print(self.data)
         # exit()
-        if self.clean_data:
-            self.M_table.insertAll(self.clean_data)
-        if self.bad_data:
-            self.M_table_bad.insertAll(self.bad_data)
-        # 获取gov id
-        gov_ids = map(lambda x:x['id'],self.data)
-        sql = "update {0} set is_contrast= '1' where id in ({1})".format(self.M_table_gov,','.join(gov_ids))
+        # if self.data:
+        #     self.M_table.insertAll(self.data)
+        # if self.bad_data:
+        #     self.M_table_bad.insertAll(self.bad_data)
+
+        sql = "update {0} set is_contrast= 1 where id in ({1})".format(self.table_gov,','.join(self.gov_ids))
+        print(sql)
         self.M_table_gov.cursor.execute(sql)
 
     def close(self):
@@ -116,10 +116,11 @@ class ETL():
             one_data['updated'] = int(time.time())
             if is_legal: # 干净数据
                 one_data['is_contrast'] = 1
-                self.clean_data.append(one_data)
+                self.data.append(one_data)
             else: # 脏数据
                 one_data['is_contrast'] = 2
                 self.bad_data.append(one_data)
+
         # return self.data
 
     def __handleExist(self):
@@ -135,7 +136,7 @@ class ETL():
             # print(sql)
             is_exist = self.M_table.cursor.execute(sql)
             if not is_exist: # 干净数据
-                self.clean_data.append(one_data)
+                self.data.append(one_data)
         # return self.data
 
     def __goodsExist(self):
@@ -150,7 +151,7 @@ class ETL():
                 self.table, one_data['price'], one_data['name'], one_data['type'])
             is_exist = self.M_table.cursor.execute(sql)
             if not is_exist:
-                self.clean_data.append(one_data)
+                self.data.append(one_data)
         # return self.data
 
 # if __name__ == '__main__':

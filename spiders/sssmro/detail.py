@@ -45,7 +45,7 @@ def goodsOutline(url):
         # 二级目录名及链接
         body = getHtml(first_grade_url[i])
         html = HtmlResponse(url=first_grade_url[i], body=str(body))
-        soup = BeautifulSoup(body, 'lxml')
+        # soup = BeautifulSoup(body, 'lxml')
         # second_grade_name = soup.find_all()
         second_grade_name = []
         second_grade_url = []
@@ -81,6 +81,7 @@ def goodsOutline(url):
                     url_data['first_grade'] = first_grade_name[i]
                     url_data['created'] = int(time.time())
                     url_data['updated'] = int(time.time())
+                    outline_data.append(url_data)
                     q += 1
                 except:
                     break
@@ -110,6 +111,7 @@ def goodsOutline(url):
                 url_data['first_grade'] = first_grade_name[2]
                 url_data['created'] = int(time.time())
                 url_data['updated'] = int(time.time())
+                outline_data.append(url_data)
                 q += 1
             except:
                 break
@@ -158,20 +160,16 @@ def goodsDetail(detail_url):
     soup = BeautifulSoup(sizes, 'lxml')
     priceslist = soup.find_all('div', {'style': 'display:none;'})   # 存储包含有价格的html语句的list
     num = len(priceslist)   # num表示了该页面中有几个产品
-    prices = []     # 存储num个价格的list
-    for i in range(num):
-        prices.append(float(priceslist[i].string.replace('\n\t\t\t   \n              ', '').replace(' \n              ', '')))
     columnnum = len(soup.find('tr').find_all('td'))
-
     tmplist = soup.find_all('td')
-    typelist = []  # 存储num个型号的list
-    for i in range(num):
-        typelist.append(tmplist[columnnum * (i + 1) + 1].string)
     # 名称
     name = html.xpath('//*[@id="spec-list"]/ul/li/img/@alt').extract()[0]
     # 详情，包含两个标签，一个div，一个p，都是html语句，两个用换行符'\n'隔开
     detailInfo1 = html.xpath('//*[@id="sub11"]/div[1]').extract()[0]    # div
-    detailInfo2 = html.selector.xpath('//*[@id="sub11"]/div[3]/p').extract()[0]   # p
+    try:
+        detailInfo2 = html.selector.xpath('//*[@id="sub11"]/div[3]/p').extract()[0]   # p
+    except:
+        detailInfo2 = ''
     detailInfo = detailInfo1 + '\n' + detailInfo2
     # 图片
     # print(html.selector.xpath('//*[@id="spec-list"]/ul/li/img'))
@@ -179,21 +177,18 @@ def goodsDetail(detail_url):
     for pic in html.selector.xpath('//*[@id="spec-list"]/ul/li/img'):
         # 去除图片尺寸,方法图片('//*[@id="spec-n1"]/img')
         pics.append( 'www.sssmro/'+ pic.xpath('@src').extract()[0])
-
     pics = '|'.join(pics)
-    storage = ''
-    lack_period = ''
-    goodslist = []  # 保存num个产品dict的list
+    goodslist = []
     for i in range(num):
         goodslist.append(defaultdict())
-        goodslist[i]['price'] = prices[i]
-        goodslist[i]['type'] = typelist[i]
-        goodslist[i]['detail_url'] = detail_url + '|' + str(i + 1)
+        goodslist[i]['price'] = float(priceslist[i].string.replace('\n\t\t\t   \n              ', '').replace(' \n              ', ''))
+        goodslist[i]['type'] = tmplist[columnnum * (i + 1) + 1].string
+        goodslist[i]['source_url'] = detail_url + '|' + str(i + 1)
         goodslist[i]['name'] = name
         goodslist[i]['detail'] = detailInfo
         goodslist[i]['pics'] = pics
-        goodslist[i]['storage'] = storage
-        goodslist[i]['lack_period'] = lack_period
+        goodslist[i]['storage'] = ''
+        goodslist[i]['lack_period'] = ''
         goodslist[i]['created'] = int(time.time())
         goodslist[i]['updated'] = int(time.time())
     return goodslist

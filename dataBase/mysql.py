@@ -141,9 +141,9 @@ class M(DB):
         '''
         DB.close(self)
 
-# if __name__ == '__main__':
-#     # 实例化库 和 表
-#     table_test = M(db_name='test',table_name='test')
-#     # 数据测试
-#     data = [{'price':10.4,'name':'风机','pics':'pic0|pic2','type':'封闭式','detail':'aaaa','source_url':'http://gaegagg.com'}]
-#     table_test.insertAll(data)
+if __name__ == '__main__':
+    # 实例化库 和 表
+    table_test = M(db_name='test',table_name='test')
+    # 数据测试
+    data = [{'price':10.4,'name':'风机','pics':'pic0|pic2','type':'封闭式','detail':'aaaa','source_url':'http://gaegagg.com'}]
+    table_test.insertAll(data)

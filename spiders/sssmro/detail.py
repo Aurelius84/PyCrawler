@@ -21,6 +21,7 @@ import time
 import re
 from bs4 import BeautifulSoup
 
+
 def goodsOutline(url):
     '''
     获取三级目录详情

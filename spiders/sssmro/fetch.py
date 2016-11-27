@@ -113,21 +113,24 @@ def etl():
     gov_name = site + '_gov'
     table_gov = M(db_name,gov_name)
     # 每次处理量
-    iter_count = 10
+    iter_count = 500
     sql = 'select * from {0} where is_contrast=0 order by id limit {1}'.format(gov_name,iter_count)
     n = table_gov.cursor.execute(sql)
-    while n:
-        datas = table_gov.cursor.fetchall()
+    etl_func = ETL(db_name=db_name,site_name=site)
+    datas = table_gov.cursor.fetchall()
+    while datas:
+        print(list(datas)[0]['id'])
         # ETL清洗
-        ETL(db_name=db_name,site_name=site,data=list(datas)).run()
-        exit()
+        etl_func.run(list(datas))
         # 继续查库
-        sql = 'select * from {0} where is_contrast=0 order by id limit {1}'.format(gov_name,iter_count)
+        table_gov.commit()
         n = table_gov.cursor.execute(sql)
+        datas = table_gov.cursor.fetchall()
+
     print('ETL process is done!')
     # 关闭数据库
     table_gov.close()
-    ETL.close()
+    etl_func.close()
 
 def Usage():
     '''

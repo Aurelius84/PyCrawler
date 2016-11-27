@@ -19,7 +19,7 @@ class ETL():
     去重及批处理入库逻辑
     """
 
-    def __init__(self, db_name, site_name, data):
+    def __init__(self, db_name, site_name):
         if not (db_name and site_name):
             raise ValueError("db_name or table_name is empty!")
         # 数据库名
@@ -36,15 +36,15 @@ class ETL():
 
         # 存放脏数据
         self.bad_data = []
-        # 原始数据
-        self.data = data
-        # 记录gov_ids
-        self.gov_ids = map(lambda x:unicode(x['id']),self.data)
         self.key_fields = ['price', 'name', 'pics', 'type',
                            'detail', 'source_url', 'storage', 'lack_period']
         self.key_type = [float, unicode, unicode, unicode, unicode, unicode, unicode, unicode]
 
-    def run(self):
+    def run(self,data):
+        # 原始数据
+        self.data = data
+        # 记录gov_ids
+        self.gov_ids = map(lambda x:str(x['id']),self.data)
         # 检查数据类型合法性
         self.__setParamters()
         # 检查各个字段合法性
@@ -56,14 +56,15 @@ class ETL():
         # 批量插入数据库
         # print(self.data)
         # exit()
-        # if self.data:
-        #     self.M_table.insertAll(self.data)
-        # if self.bad_data:
-        #     self.M_table_bad.insertAll(self.bad_data)
+        if self.data:
+            self.M_table.insertAll(self.data)
+        if self.bad_data:
+            self.M_table_bad.insertAll(self.bad_data)
 
         sql = "update {0} set is_contrast= 1 where id in ({1})".format(self.table_gov,','.join(self.gov_ids))
-        print(sql)
         self.M_table_gov.cursor.execute(sql)
+        self.M_table_gov.commit()
+        return True
 
     def close(self):
         '''
@@ -149,7 +150,11 @@ class ETL():
             is_exist = False
             sql = "select id from {0} where price={1} and name='{2}' and type='{3}' order by id limit 1".format(
                 self.table, one_data['price'], one_data['name'], one_data['type'])
-            is_exist = self.M_table.cursor.execute(sql)
+            try:
+                is_exist = self.M_table.cursor.execute(sql)
+            except:
+                print(one_data['source_url'])
+                exit()
             if not is_exist:
                 self.data.append(one_data)
         # return self.data

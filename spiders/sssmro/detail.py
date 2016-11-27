@@ -53,12 +53,14 @@ def goodsOutline(url):
         while(q):
             try:
                 second_grade_name.append(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
-                # print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
                 second_grade_url.append(url + '/' + html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
-                # print(url + '/' + html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
                 q += 1
             except:
                 break
+        # 在这个地方删掉不要的化工泵
+        if second_grade_name[7] == u'\u5316\u5de5\u6cf5':
+            del second_grade_name[7]
+            del second_grade_url[7]
         for j in range(len(second_grade_name)):
             # 三级目录名及链接
             body =  getHtml(second_grade_url[j])
@@ -69,9 +71,9 @@ def goodsOutline(url):
             while(q):
                 try:
                     third_grade_name.append(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
-                    print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
+                    # print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
                     third_grade_url.append(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
-                    print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
+                    # print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
                     url_data = defaultdict()
                     url_data['url'] = url + '/' + third_grade_url[q-1]  # 把主页url和解析到的按三级目录url片段拼起来
                     url_data['third_grade'] = third_grade_name[q-1]
@@ -97,15 +99,15 @@ def goodsOutline(url):
             try:
                 third_grade_name.append(
                     html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
-                print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
+                # print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
                 third_grade_url.append(
                     html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
-                print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
+                # print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
                 url_data = defaultdict()
                 url_data['url'] = url + '/' + third_grade_url[q - 1]  # 把主页url和解析到的按三级目录url片段拼起来
                 url_data['third_grade'] = third_grade_name[q - 1]
                 url_data['second_grade'] = second_grade_name[j]
-                url_data['first_grade'] = first_grade_name[i]
+                url_data['first_grade'] = first_grade_name[2]
                 url_data['created'] = int(time.time())
                 url_data['updated'] = int(time.time())
                 q += 1
@@ -117,25 +119,26 @@ def goodsOutline(url):
 def goodsUrlList(home_url):
     '''
     根据三级目录商品首页获取所有详情页url
-    :param home_url: http://www.vipmro.com/search/?&categoryId=501110
+    :param home_url: http://www.sssmro.com//category.php?id=1137&price_min=&price_max=
     :return:url列表
     '''
-    # 所有条件下的列表
-    all_group_list = parseOptional(home_url)
+    # 该网站不需要条件选择即可抓到所有产品
     # 保存所有goods的详情页url
     url_list = []
-    for url in all_group_list:
-        # url = 'http://www.vipmro.com/search/?ram=0.9551325197768372&categoryId=501110&attrValueIds=509805,509801,509806,509807'
-        # 解析html
-        home_page = getHtmlFromJs(url)['content'].encode('utf-8')
-        html = HtmlResponse(url=url,body=str(home_page))
-        urls = html.selector.xpath('/html/body/div[7]/div[1]/ul/li/div[2]/a/@href').extract()
-        url_list.extend(urls)
-    #     print(len(urls))
-    #     print(urls)
-    #     exit()
-    # print(len(url_list))
-    # print(url_list)
+    # 解析首页，拿到该三级目录下有几页网页
+    body = getHtml(home_url)
+    html = HtmlResponse(url=home_url, body=str(body))
+    # 先拿到该三级目录下的产品有几页
+    num = int(html.xpath('/html/body/div[9]/div[2]/div[4]/form/ul/li[1]/text()').extract()[0][2:])
+    # 然后抓取每一页下的产品的url
+    for i in range(1, num+1):
+        iter_url = home_url + '&page=' + str(i) + '&sort=last_update&order=DESC'
+        body = getHtml(iter_url)
+        html = HtmlResponse(url=iter_url, body=str(body))
+        alist = html.xpath('/html/body/div[9]/div[2]/form/div/div/div/p[1]/a/@href').extract()
+        print(len(alist))
+        for url in alist:
+            url_list.append('http://www.sssmro.com//' + url)
     return url_list
 
 def goodsDetail(detail_url):
@@ -225,6 +228,13 @@ if __name__ == '__main__':
     for i in range(len(llist)):
         print(i, llist[i])
     '''
+    # 测试函数goodsOutline(url)
+    # url = 'http://www.sssmro.com'
+    # goodsOutline(url)
 
-    url = 'http://www.sssmro.com'
-    goodsOutline(url)
+    
+    # 测试函数goodsUrlList(home_url)
+    url = 'http://www.sssmro.com//category.php?id=1138&price_min=&price_max='
+    goodsUrlList(url)
+
+

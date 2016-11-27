@@ -119,13 +119,16 @@ def goodsDetail(detail_url):
     # 名称
     goods_data['name'] = html.xpath('/html/body/div[4]/div[2]/div/h1/a/text()').extract()[0]
     # 价格(为毛啊1.sub函数第二个参数设置为空输出就没了2.对价格做个lstrip()输出又没了)
-    goods_data['price'] = re.sub(ur'^.{3}',' ',html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[1]/b/text()').extract()[0]).replace(' ','')
+    #goods_data['price'] = re.sub(ur'^.{3}',' ',html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[1]/b/text()').extract()[0]).replace(' ','')
+    goods_data['price'] = html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[1]/b/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
+    #print goods_data['price'] 
     # 型号
     table = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/table').extract()[0]
     goods_data['type'] = re.sub(ur'^.{3}','',html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[2]/span[1]/font[2]/text()').extract()[0],count = 1)
+    
     # 详情
     goods_data['detail'] = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]').extract()[0]
-    print goods_data['detail']
+    #print goods_data['detail']
     # 图片
     goods_data['pics'] = html.selector.xpath('//*[@id="proSmallImg"]').xpath('@src').extract()[0].replace('../','http://www.runlian365.com/')
     goods_data['storage'] = ''
@@ -159,6 +162,6 @@ def parse(url):
 
 if __name__ == '__main__':
     # url = 'http://www.vipmro.com/product/587879'
-    url = 'http://www.runlian365.com'
-    goodsOutline(url)
+    url = 'http://www.runlian365.com/chanpin/xx-110361.html'
+    goodsDetail(url)
 

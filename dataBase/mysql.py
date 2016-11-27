@@ -22,8 +22,8 @@ class DB(object):
         self.connect = MySQLdb.connect(
             host='localhost',
             port=3306,
-            user='root',
-            passwd='zlj521226',
+            user='PyCrawler',
+            passwd='123456',
             db=db_name,
             charset='utf8',
             # 返回字典形式

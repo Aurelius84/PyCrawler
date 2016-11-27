@@ -138,7 +138,7 @@ def goodsUrlList(home_url):
         alist = html.xpath('/html/body/div[9]/div[2]/form/div/div/div/p[1]/a/@href').extract()
         print(len(alist))
         for url in alist:
-            url_list.append('http://www.sssmro.com//' + url)
+            url_list.append('http://www.sssmro.com//' + url + '|1')
     return url_list
 
 def goodsDetail(detail_url):
@@ -147,6 +147,8 @@ def goodsDetail(detail_url):
     :param detail_url: 详情页url
     :return: 因为每个详情页面可能会产生多条数据，所以返回值是一个以dict为元素的list，其中每一个dict是一条数据
     '''
+    # 因为前面为了去重加了'|1'，现在要去除之
+    detail_url = detail_url.split('|')[0]
     # 解析网页
     body = getHtml(detail_url)
     html = HtmlResponse(url=detail_url, body=str(body))
@@ -186,7 +188,7 @@ def goodsDetail(detail_url):
         goodslist.append(defaultdict())
         goodslist[i]['price'] = prices[i]
         goodslist[i]['type'] = typelist[i]
-        goodslist[i]['detail_url'] = detail_url
+        goodslist[i]['detail_url'] = detail_url + '|' + str(i + 1)
         goodslist[i]['name'] = name
         goodslist[i]['detail'] = detailInfo
         goodslist[i]['pics'] = pics
@@ -235,7 +237,6 @@ if __name__ == '__main__':
     # 测试函数goodsOutline(url)
     # url = 'http://www.sssmro.com'
     # goodsOutline(url)
-
 
     # 测试函数goodsUrlList(home_url)
     # url = 'http://www.sssmro.com//category.php?id=1138&price_min=&price_max='

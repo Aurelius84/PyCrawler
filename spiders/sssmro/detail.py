@@ -12,7 +12,8 @@
 """
 
 # from spiders.myfunc import *
-from myfunc import getHtml
+# from myfunc import getHtml
+from myfunc import *
 from scrapy.http import HtmlResponse
 from collections import defaultdict
 import itertools
@@ -20,6 +21,98 @@ import time
 import re
 from bs4 import BeautifulSoup
 
+def goodsOutline(url):
+    '''
+    获取三级目录详情
+    :param url: 网站主页链接
+    :return: [{'url':'','first_grade':'','second_grade': '', 'third_grade': ''},...{}]
+    '''
+    # 存储最后的三级列表页面
+    outline_data = []
+    # 解析页面
+    body = getHtml(url)
+    html = HtmlResponse(url=url, body=str(body))
+    soup = BeautifulSoup(body, 'lxml')      # xpath不好使就用beautisoup
+    # 抓取一级目录名及链接，这里只要以下内容：
+    # 泵阀门接头管件（不要化工泵）、紧固件密封件传动件（全要）、仪器仪表测量（只要气体检测仪，电力电工检测仪器）
+    # 所以现在一级列表名称及链接不抓了，直接放到下面
+    first_grade_name = ['紧固件密封件传动件', '泵阀门接头管件', '仪器仪表测量']
+    first_grade_url = [url + '/category.php?id=207&amp;price_min=&amp;price_max=',
+                       url + '/category.php?id=208&amp;price_min=&amp;price_max=',
+                       url + '/category.php?id=191&amp;price_min=&amp;price_max=']
+    # 这个for循环只处理了前两个一级目录，第三个里边只要两个二级目录
+    for i in range(2):
+        # 二级目录名及链接
+        body = getHtml(first_grade_url[i])
+        html = HtmlResponse(url=first_grade_url[i], body=str(body))
+        soup = BeautifulSoup(body, 'lxml')
+        # second_grade_name = soup.find_all()
+        second_grade_name = []
+        second_grade_url = []
+        q = 1
+        while(q):
+            try:
+                second_grade_name.append(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
+                # print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
+                second_grade_url.append(url + '/' + html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
+                # print(url + '/' + html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
+                q += 1
+            except:
+                break
+        for j in range(len(second_grade_name)):
+            # 三级目录名及链接
+            body =  getHtml(second_grade_url[j])
+            html = HtmlResponse(url=second_grade_url[j], body=str(body))
+            third_grade_name = []
+            third_grade_url = []
+            q = 1
+            while(q):
+                try:
+                    third_grade_name.append(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
+                    print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
+                    third_grade_url.append(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
+                    print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
+                    url_data = defaultdict()
+                    url_data['url'] = url + '/' + third_grade_url[q-1]  # 把主页url和解析到的按三级目录url片段拼起来
+                    url_data['third_grade'] = third_grade_name[q-1]
+                    url_data['second_grade'] = second_grade_name[j]
+                    url_data['first_grade'] = first_grade_name[i]
+                    url_data['created'] = int(time.time())
+                    url_data['updated'] = int(time.time())
+                    q += 1
+                except:
+                    break
+    # 下面抓第三个一级目录下的两个二级目录下的三级目录
+    second_grade_name = ['气体检测仪', '电力电工检测仪器']
+    second_grade_url = ['http://www.sssmro.com/category.php?id=702&price_min=&price_max=',
+                        'http://www.sssmro.com/category.php?id=722&price_min=&price_max=']
+    for j in range(len(second_grade_name)):
+        # 三级目录名及链接
+        body = getHtml(second_grade_url[j])
+        html = HtmlResponse(url=second_grade_url[j], body=str(body))
+        third_grade_name = []
+        third_grade_url = []
+        q = 1
+        while (q):
+            try:
+                third_grade_name.append(
+                    html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
+                print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/text()').extract()[0])
+                third_grade_url.append(
+                    html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
+                print(html.xpath('/html/body/div[9]/div[2]/div[1]/dl/dd/ul/li[' + str(q) + ']/a/@href').extract()[0])
+                url_data = defaultdict()
+                url_data['url'] = url + '/' + third_grade_url[q - 1]  # 把主页url和解析到的按三级目录url片段拼起来
+                url_data['third_grade'] = third_grade_name[q - 1]
+                url_data['second_grade'] = second_grade_name[j]
+                url_data['first_grade'] = first_grade_name[i]
+                url_data['created'] = int(time.time())
+                url_data['updated'] = int(time.time())
+                q += 1
+            except:
+                break
+    # 至此，所有的三级页面首页目录链接都存在了outline_data里
+    return outline_data
 
 def goodsUrlList(home_url):
     '''
@@ -118,15 +211,20 @@ def parseOptional(url):
     # 安装方式
     an_zhuang = html.selector.xpath('/html/body/div[5]/div[12]/ul/li/a/@href').re(r'ValueIds=(\d+)')
     # 获取所有参数组合
-    all_group = list(itertools.product(xi_lie,fen_duan,tuo_kou_qi,an_zhuang))
+    all_group = list(itertools.product(xi_lie, fen_duan, tuo_kou_qi, an_zhuang))
     _url = url + '&attrValueIds='
-    url_list = map(lambda x:_url+','.join(list(x)),all_group)
+    url_list = map(lambda x: _url+','.join(list(x)), all_group)
 
     return url_list
 
 if __name__ == '__main__':
+    '''
+    # 测试抓取详情页面的代码
     url = 'http://www.sssmro.com/goods.php?id=27203'
     llist = goodsDetail(url)
     for i in range(len(llist)):
         print(i, llist[i])
+    '''
 
+    url = 'http://www.sssmro.com'
+    goodsOutline(url)

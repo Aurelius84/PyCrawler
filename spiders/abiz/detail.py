@@ -20,6 +20,25 @@ import itertools
 import time
 import re
 from bs4 import BeautifulSoup
+import requests
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+def getHtmlByRequests(url):
+    s = requests.session()
+    headers_base = {'Connection': 'keep=alive',
+                    'Content-Encoding': 'gzip',
+                    'Content - Language': 'zh - CN',
+                    'Content - Type': 'text / html; charset = UTF - 8',
+                    'Date': 'Sun, 27 Nov 2016 10:12:37 GMT',
+                    'Server': 'nginx',
+                    'Set - Cookie': 'clientlanguage=zh_CN; path=/',
+                    'Transfer - Encoding': 'chunked',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36',
+                    'Referer': 'http://mro.abiz.com/',}
+    response = s.get(url, headers=headers_base)
+    return response.content
 
 def goodsOutline(url):
     '''
@@ -147,56 +166,40 @@ def goodsDetail(detail_url):
     :param detail_url: 详情页url
     :return: 因为每个详情页面可能会产生多条数据，所以返回值是一个以dict为元素的list，其中每一个dict是一条数据
     '''
-    # 因为前面为了去重加了'|1'，现在要去除之
-    detail_url = detail_url.split('|')[0]
     # 解析网页
-    body = getHtml(detail_url)
+
+    body = getHtmlByRequests(detail_url)
     html = HtmlResponse(url=detail_url, body=str(body))
 
-    # 根据页面中几个价格判断页面中有几个型号，然后创建几个dict
-    sizes = html.xpath('//*[@id="relative_goods"]').extract()[0]    # //*[@id="relative_goods"]
-    soup = BeautifulSoup(sizes, 'lxml')
-    priceslist = soup.find_all('div', {'style': 'display:none;'})   # 存储包含有价格的html语句的list
-    num = len(priceslist)   # num表示了该页面中有几个产品
-    prices = []     # 存储num个价格的list
-    for i in range(num):
-        prices.append(float(priceslist[i].string.replace('\n\t\t\t   \n              ', '').replace(' \n              ', '')))
-    columnnum = len(soup.find('tr').find_all('td'))
-
-    tmplist = soup.find_all('td')
-    typelist = []  # 存储num个型号的list
-    for i in range(num):
-        typelist.append(tmplist[columnnum * (i + 1) + 1].string)
+    goods_data = defaultdict()
     # 名称
-    name = html.xpath('//*[@id="spec-list"]/ul/li/img/@alt').extract()[0]
-    # 详情，包含两个标签，一个div，一个p，都是html语句，两个用换行符'\n'隔开
-    detailInfo1 = html.xpath('//*[@id="sub11"]/div[1]').extract()[0]    # div
-    detailInfo2 = html.selector.xpath('//*[@id="sub11"]/div[3]/p').extract()[0]   # p
-    detailInfo = detailInfo1 + '\n' + detailInfo2
-    # 图片
-    # print(html.selector.xpath('//*[@id="spec-list"]/ul/li/img'))
+    goods_data['name'] = html.xpath('//*[@id="productMainName"]/text()').extract()[0]
+    # 价格
+    goods_data['price'] = html.selector.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/dl[1]/dd/strong/b/text()').extract()
+    # 型号
+    goods_data['type'] = html.selector.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/div/dl[2]/dd/text()').extract()[0]
+    # 详情    table放在了一个iframe里面，需要访问一个新的链接
+    tmp_url = 'http://mro.abiz.com/' + html.selector.xpath('//*[@id="rightFrame"]/@src').extract()[0]
+    tmp = getHtmlByRequests(tmp_url)
+    tmp = HtmlResponse(url=tmp_url, body=str(tmp))
+    goods_data['detail'] = tmp.selector.xpath('/html/body/div/table').extract()[0]
+    # 图片，下面的while循环抓取多张图片，并拿到那张尺寸大的链接
     pics = []
-    for pic in html.selector.xpath('//*[@id="spec-list"]/ul/li/img'):
-        # 去除图片尺寸,方法图片('//*[@id="spec-n1"]/img')
-        pics.append( 'www.sssmro/'+ pic.xpath('@src').extract()[0])
-
-    pics = '|'.join(pics)
-    storage = ''
-    lack_period = ''
-    goodslist = []  # 保存num个产品dict的list
-    for i in range(num):
-        goodslist.append(defaultdict())
-        goodslist[i]['price'] = prices[i]
-        goodslist[i]['type'] = typelist[i]
-        goodslist[i]['detail_url'] = detail_url + '|' + str(i + 1)
-        goodslist[i]['name'] = name
-        goodslist[i]['detail'] = detailInfo
-        goodslist[i]['pics'] = pics
-        goodslist[i]['storage'] = storage
-        goodslist[i]['lack_period'] = lack_period
-        goodslist[i]['created'] = int(time.time())
-        goodslist[i]['updated'] = int(time.time())
-    return goodslist
+    index = 1
+    while(index):
+        try:
+            tmp_url = str(html.xpath('//*[@id="detailPictureSlider"]/li['+str(index)+']/img/@src').extract()[0])[:-6] + '2.jspx'
+            pics.append('http://mro.abiz.com' + tmp_url)
+            index += 1
+        except:
+            break
+    goods_data['pics'] = '|'.join(pics)
+    goods_data['storage'] = ''
+    goods_data['lack_period'] = re.findall(r'\d*',
+                                           str(html.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/div/dl[4]/dd/text()').extract()[0]))[0]
+    goods_data['created'] = int(time.time())
+    goods_data['updated'] = int(time.time())
+    return goods_data
 
 def parseOptional(url):
     '''
@@ -225,22 +228,9 @@ def parseOptional(url):
     '''
     pass
 
+
 if __name__ == '__main__':
 
     # 测试函数goodsDetail(detail_url)
-    url = 'http://www.sssmro.com/goods.php?id=30419'
-    llist = goodsDetail(url)
-
-    # for i in range(len(llist)):
-    #     print(i, llist[i])
-    # print(len(llist))
-
-    # 测试函数goodsOutline(url)
-    # url = 'http://www.sssmro.com'
-    # goodsOutline(url)
-
-    # 测试函数goodsUrlList(home_url)
-    # url = 'http://www.sssmro.com//category.php?id=1138&price_min=&price_max='
-    # goodsUrlList(url)
-
-
+    url = 'http://mro.abiz.com/product/AB1000.htm'
+    goodsDetail(url)

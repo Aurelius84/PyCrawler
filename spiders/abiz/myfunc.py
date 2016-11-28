@@ -12,7 +12,7 @@
 """
 import urllib
 import urllib2
-from tornado_fetcher import Fetcher
+# from tornado_fetcher import Fetcher
 
 
 def getHtml(url,post_data=''):

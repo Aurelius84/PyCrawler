@@ -10,10 +10,12 @@
 @file: __init__.py.py
 @time: 16/11/26 下午15:45
 """
-
-# from spiders.myfunc import *
-# from myfunc import getHtml
+import sys
+sys.path.append("..")
+import myfunc
 from myfunc import *
+# from myfunc import getHtml
+# from myfunc import *
 from scrapy.http import HtmlResponse
 from collections import defaultdict
 import itertools
@@ -177,7 +179,7 @@ def goodsDetail(detail_url):
     pics = []
     for pic in html.selector.xpath('//*[@id="spec-list"]/ul/li/img'):
         # 去除图片尺寸,方法图片('//*[@id="spec-n1"]/img')
-        pics.append( 'www.sssmro/'+ pic.xpath('@src').extract()[0])
+        pics.append( 'www.sssmro.com/'+ pic.xpath('@src').extract()[0])
     pics = '|'.join(pics)
     goodslist = []
     for i in range(num):

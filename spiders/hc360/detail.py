@@ -18,6 +18,21 @@ import itertools
 import time
 import re
 import chardet
+import requests
+
+def getHtmlByRequests(url):
+    s = requests.session()
+    headers_base = {'Connection': 'keep=alive',
+                'Content-Encoding': 'gzip',
+                'Content - Language': 'zh - CN',
+                'Content - Type': 'text / html; charset = UTF - 8',
+                'Server': 'nginx',
+                'Set - Cookie': 'clientlanguage=zh_CN; path=/',
+                'Transfer - Encoding': 'chunked',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36',
+                'Referer': 'http://mro.abiz.com/',}
+    response = s.get(url, headers=headers_base)
+    return response.content
 
 def goodsOutline(url):
     '''
@@ -115,11 +130,16 @@ def goodsDetail(detail_url):
     goods_data['source_url'] = detail_url
     # 解析html body必须是str类型
     body = getHtml(detail_url)
+    print body
+    exit(0)
     html = HtmlResponse(url=detail_url,body=str(body))
+    print html
     # 名称
     goods_data['name'] = html.xpath('//*[@id="comTitle"]/text()').extract()[0]
+    print goods_data['name']
     # 价格
-    goods_data['price'] = html.selector.xpath('//*[@id="oriPriceTop"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
+    goods_data['price'] = html.selector.xpath('//*[@id="oriPriceTop"]/text()').extract()[0]
+    #.re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
     print goods_data['price'] 
     # 型号
     goods_data['type'] = html.selector.xpath('//*[@id="pdetail"]/div[3]/table/tbody/tr/th[contains(text(),u"型号")]').xpath('..').xpath('./td/text()').extract()[0]
@@ -165,6 +185,6 @@ def parse(url):
 
 if __name__ == '__main__':
     # url = 'http://www.vipmro.com/product/587879'
-    url = 'http://b2b.hc360.com/supplyself/512512567.html'
+    url = 'http://b2b.hc360.com/supplyself/511911171.html'
     goodsDetail(url)
 

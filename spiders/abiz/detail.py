@@ -31,7 +31,6 @@ def getHtmlByRequests(url):
                     'Content-Encoding': 'gzip',
                     'Content - Language': 'zh - CN',
                     'Content - Type': 'text / html; charset = UTF - 8',
-                    'Date': 'Sun, 27 Nov 2016 10:12:37 GMT',
                     'Server': 'nginx',
                     'Set - Cookie': 'clientlanguage=zh_CN; path=/',
                     'Transfer - Encoding': 'chunked',
@@ -54,12 +53,6 @@ def goodsOutline(url):
     # soup = BeautifulSoup(body, 'lxml')      # xpath不好使就用beautisoup
     # 抓取一级目录名及链接，这里只要以下内容：
     # 这里不要第四个（办公、仓储及物流用品）、第五个（仪器仪表、金属加工、焊接）
-
-    print len(html.xpath('/html/body/div[3]/div[1]/div[2]/div/div[1]/div/div[1]/dl[1]/dd/a/text()').extract())  # 一/一
-    print len(html.xpath('/html/body/div[3]/div[1]/div[2]/div/div[1]/div/div[1]/dl[2]/dd/a/text()').extract())  # 一/二
-    print len(html.xpath('/html/body/div[3]/div[1]/div[2]/div/div[2]/div/div[1]/dl[1]/dd/a/text()').extract())  # 二/一
-    print len(html.xpath('/html/body/div[3]/div[1]/div[2]/div/div[2]/div/div[1]/dl[2]/dd/a/text()').extract())  # 二/二
-    # exit()
     first_grade_name = ['安防、劳保、清洁', '手工具、动力工具及耗材', '电气、管道、暖通照明', '机械部件、设备条件']
     num = ['1', '2', '3', '6']
     for i in range(4):
@@ -92,24 +85,21 @@ def goodsUrlList(home_url):
     :param home_url: http://www.sssmro.com//category.php?id=1137&price_min=&price_max=
     :return:url列表
     '''
-    # 该网站不需要条件选择即可抓到所有产品
-    # 保存所有goods的详情页url
-    url_list = []
-    # 解析首页，拿到该三级目录下有几页网页
-    body = getHtml(home_url)
+    # 该网站不用加条件遍历所有情况就能拿到所有产品的url
+    body = getHtmlByRequests(home_url)
     html = HtmlResponse(url=home_url, body=str(body))
-    # 先拿到该三级目录下的产品有几页
-    num = int(html.xpath('/html/body/div[9]/div[2]/div[4]/form/ul/li[1]/text()').extract()[0][2:])
-    # 然后抓取每一页下的产品的url
+    url_list = []
+    # 拿到该三级目录下一共有几页产品，存在变量num中
+    num = int(html.xpath('//*[@id="tableForm"]/div[2]/span[2]/text()').extract()[0][1:-1])
     for i in range(1, num+1):
-        iter_url = home_url + '&page=' + str(i) + '&sort=last_update&order=DESC'
-        body = getHtml(iter_url)
-        html = HtmlResponse(url=iter_url, body=str(body))
-        alist = html.xpath('/html/body/div[9]/div[2]/form/div/div/div/p[1]/a/@href').extract()
-        print(len(alist))
-        for url in alist:
-            url_list.append('http://www.sssmro.com//' + url + '|1')
+        url = home_url[:-4] + '_' + str(i) + '.htm' # 第i页
+        body = getHtmlByRequests(url)
+        html = HtmlResponse(url=url, body=str(body))
+        tmp_list = html.xpath('//*[@id="tableForm"]/div[1]/ul/li/p[1]/a/@href').extract()
+        for tmp in tmp_list:
+            url_list.append('http://mro.abiz.com' + tmp)
     return url_list
+
 
 def goodsDetail(detail_url):
     '''
@@ -187,5 +177,9 @@ if __name__ == '__main__':
     # print goodsDetail(url)
 
     # 测试函数goodsOutline(url)
-    url = 'http://mro.abiz.com'
-    goodsOutline(url)
+    # url = 'http://mro.abiz.com'
+    # goodsOutline(url)
+
+    # 测试函数goodsUrlList(home_url)
+    url = 'http://mro.abiz.com/catalog/63011.htm'
+    goodsUrlList(url)

@@ -110,6 +110,7 @@ def goodsDetail(detail_url):
     # 解析网页
 
     body = getHtmlByRequests(detail_url)
+    print body
     html = HtmlResponse(url=detail_url, body=str(body))
 
     goods_data = defaultdict()

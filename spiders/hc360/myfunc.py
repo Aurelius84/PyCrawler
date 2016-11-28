@@ -12,7 +12,7 @@
 """
 import urllib
 import urllib2
-
+from tornado_fetcher import Fetcher
 
 def getHtml(url,post_data=''):
     '''
@@ -24,7 +24,7 @@ def getHtml(url,post_data=''):
 
     if post_data and isinstance(post_data,dict):
         data = urllib.urlencode(post_data)
-        req = urllib2.Request(url,post_data=data)
+        req = urllib2.Request(url, post_data=data)
     else:
         req = urllib2.Request(url)
     try:
@@ -32,4 +32,18 @@ def getHtml(url,post_data=''):
         return res
     except Exception,e:
         print( Exception,":",e)
+
+def getHtmlFromJs(url):
+    '''
+    获取js加载数据后的html
+    :param url:请求url
+    :return:
+    '''
+    fetcher=Fetcher(
+          user_agent='phantomjs', # user agent
+          phantomjs_proxy='http://localhost:4444', # phantomjs url
+          pool_size=10, # max httpclient num
+          async=False
+          )
+    return fetcher.phantomjs_fetch(url)
 

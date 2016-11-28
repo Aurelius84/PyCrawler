@@ -14,10 +14,11 @@
 from myfunc import *
 from scrapy.http import HtmlResponse
 from collections import defaultdict
-import itertools
 import time
 import re
 import chardet
+
+
 
 def goodsOutline(url):
     '''
@@ -114,28 +115,31 @@ def goodsDetail(detail_url):
     # 详情页链接
     goods_data['source_url'] = detail_url
     # 解析html body必须是str类型
-    body = getHtml(detail_url)
-    html = HtmlResponse(url=detail_url,body=str(body))
+    body = getHtmlFromJs(detail_url)['content'].encode('utf-8')
+    #print body
+    html = HtmlResponse(url=detail_url, body=str(body))
     # 名称
     goods_data['name'] = html.xpath('//*[@id="comTitle"]/text()').extract()[0]
+    print goods_data['name']
     # 价格
     goods_data['price'] = html.selector.xpath('//*[@id="oriPriceTop"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
-    print goods_data['price'] 
+    print goods_data['price']
     # 型号
-    goods_data['type'] = html.selector.xpath('//*[@id="pdetail"]/div[3]/table/tbody/tr/th[contains(text(),u"型号")]').xpath('..').xpath('./td/text()').extract()[0]
+    goods_data['type'] = ''
+    #goods_data['type'] = html.selector.xpath('//*[@id="pdetail"]/div[3]/table/tbody/tr/th[contains(text(),u"型号")]').extract()[0]
     #//*[@id="pdetail"]/div[3]/table/tbody
-    print goods_data['type']
-    exit(0)
+    #xpath('..').xpath('./td/text()')
+    #print goods_data['type']
+
     # 详情
-    detail_table = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/table').extract()
-    detail_p = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/p').extract()
-    #goods_data['detail'] = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]').extract()[0]
-    goods_data['detail'] = str(detail_table + detail_p).encode('utf-8')
-    print re.sub(ur'^<img.*>$','',goods_data['detail'])
+    goods_data['detail'] = html.selector.xpath('//*[@id="pdetail"]').extract()[0]
+    print goods_data['detail']
+    exit(0)
     # 图片
     goods_data['pics'] = html.selector.xpath('//*[@id="proSmallImg"]').xpath('@src').extract()[0].replace('../','http://www.runlian365.com/')
-    goods_data['storage'] = ''
-    goods_data['lack_period'] = ''
+
+    goods_data['storage'] = html.selector.xpath('/html/body/div[9]/div[1]/div[2]/div[2]/span[2]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
+    goods_data['lack_period'] = html.selector.xpath('/html/body/div[9]/div[1]/div[2]/div[3]/text()').extract()[0]
     goods_data['created'] = int(time.time())
     goods_data['updated'] = int(time.time())
 
@@ -165,6 +169,6 @@ def parse(url):
 
 if __name__ == '__main__':
     # url = 'http://www.vipmro.com/product/587879'
-    url = 'http://b2b.hc360.com/supplyself/512512567.html'
+    url = 'http://b2b.hc360.com/supplyself/511911171.html'
     goodsDetail(url)
 

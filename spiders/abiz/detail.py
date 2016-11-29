@@ -110,12 +110,11 @@ def goodsDetail(detail_url):
 
     body = getHtmlByRequests(detail_url)
     html = HtmlResponse(url=detail_url, body=str(body))
-
     goods_data = defaultdict()
     # 名称
     goods_data['name'] = html.xpath('//*[@id="productMainName"]/text()').extract()[0]
     # 价格
-    goods_data['price'] = html.selector.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/dl[1]/dd/strong/b/text()').extract()
+    goods_data['price'] = float(html.selector.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/dl[1]/dd/strong/b/text()').extract()[0])
     # 型号
     goods_data['type'] = html.selector.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/div/dl[2]/dd/text()').extract()[0]
     # 详情    table放在了一个iframe里面，需要访问一个新的链接
@@ -123,11 +122,9 @@ def goodsDetail(detail_url):
     tmp = getHtmlByRequests(tmp_url)
     tmp = HtmlResponse(url=tmp_url, body=str(tmp))
     detailInfo1 = tmp.selector.xpath('/html/body/div/table').extract()[0] # table
+    detailInfo2 = html.xpath('//*[@id="tbc_11"]/div/p/text()[2]').extract() # p标签
+    ###################### 此处应该修改p标签的格式为目标格式
     goods_data['detail'] = tmp.selector.xpath('/html/body/div/table').extract()[0]
-    print html.xpath('//*[@id="tbc_11"]/div/p[1]').extract()[0]
-    print html.xpath('//*[@id="tbc_11"]/div/p[2]').extract()[0]
-    print html.xpath('//*[@id="tbc_11"]/div').extract()[0]
-    exit()
     # 图片，下面的while循环抓取多张图片，并拿到那张尺寸大的链接
     pics = []
     index = 1
@@ -177,7 +174,7 @@ def parseOptional(url):
 if __name__ == '__main__':
 
     # 测试函数goodsDetail(detail_url)
-    url = 'http://mro.abiz.com/product/AB1000.htm'
+    url = 'http://mro.abiz.com/product/AA1003.htm'
     print goodsDetail(url)
 
     # 测试函数goodsOutline(url)

@@ -95,12 +95,18 @@ def parseDetail():
     table_seed = M('test',table_seed_name)
     table_gov = M('test',table_gov_name)
     # 查询未入库种子
-    sql = "select a.id,a.url from {0} a where a.url not in (select source_url from {1} order by id)  order by id".format(table_seed_name,table_gov_name)
+    sql = "select a.id,a.url,a.first_grade,a.second_grade,a.third_grade from {0} a where a.url not in (select source_url from {1} order by id)  order by id".format(table_seed_name,table_gov_name)
     table_seed.cursor.execute(sql)
     seed_urls = table_seed.cursor.fetchall()
     for seed in seed_urls:
         detail = goodsDetail(seed['url'])
         print(len(detail))
+        for _ in xrange(len(detail)):
+            one_data = detail.pop(0)
+            one_data['first_grade'] = seed['first_grade']
+            one_data['second_grade'] = seed['second_grade']
+            one_data['third_grade'] = seed['third_grade']
+            detail.append(one_data)
         # 插入数据库
         table_gov.insertAll(detail)
     # 关闭数据库连接
@@ -188,4 +194,5 @@ if __name__ == '__main__':
     # main(sys.argv)
     # etl()
     # parseOutline()
-    parseSeedUrl()
+    # parseSeedUrl()
+    parseDetail()

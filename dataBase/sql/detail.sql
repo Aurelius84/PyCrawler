@@ -1,4 +1,4 @@
-CREATE TABLE `runlian365_detail` (
+CREATE TABLE `sssmro_detail` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(200) NOT NULL,
   `price` float NOT NULL COMMENT '价格',
@@ -11,6 +11,9 @@ CREATE TABLE `runlian365_detail` (
   `created` int(10) NOT NULL DEFAULT '0' COMMENT '记录创建时间',
   `updated` int(10) NOT NULL DEFAULT '0' COMMENT '记录更新时间',
   `is_contrast` int(5) DEFAULT '1',
+  `first_grade` varchar(500) NOT NULL,
+  `second_grade` varchar(500) NOT NULL,
+  `third_grade` varchar(500) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=9111 DEFAULT CHARSET=utf8mb4;

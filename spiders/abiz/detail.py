@@ -11,8 +11,7 @@
 @time: 16/11/26 下午15:45
 """
 
-# from spiders.myfunc import *
-# from myfunc import getHtml
+
 from myfunc import *
 from scrapy.http import HtmlResponse
 from collections import defaultdict
@@ -110,7 +109,6 @@ def goodsDetail(detail_url):
     # 解析网页
 
     body = getHtmlByRequests(detail_url)
-    print body
     html = HtmlResponse(url=detail_url, body=str(body))
 
     goods_data = defaultdict()
@@ -124,7 +122,12 @@ def goodsDetail(detail_url):
     tmp_url = 'http://mro.abiz.com/' + html.selector.xpath('//*[@id="rightFrame"]/@src').extract()[0]
     tmp = getHtmlByRequests(tmp_url)
     tmp = HtmlResponse(url=tmp_url, body=str(tmp))
+    detailInfo1 = tmp.selector.xpath('/html/body/div/table').extract()[0] # table
     goods_data['detail'] = tmp.selector.xpath('/html/body/div/table').extract()[0]
+    print html.xpath('//*[@id="tbc_11"]/div/p[1]').extract()[0]
+    print html.xpath('//*[@id="tbc_11"]/div/p[2]').extract()[0]
+    print html.xpath('//*[@id="tbc_11"]/div').extract()[0]
+    exit()
     # 图片，下面的while循环抓取多张图片，并拿到那张尺寸大的链接
     pics = []
     index = 1
@@ -174,13 +177,13 @@ def parseOptional(url):
 if __name__ == '__main__':
 
     # 测试函数goodsDetail(detail_url)
-    # url = 'http://mro.abiz.com/product/AB1000.htm'
-    # print goodsDetail(url)
+    url = 'http://mro.abiz.com/product/AB1000.htm'
+    print goodsDetail(url)
 
     # 测试函数goodsOutline(url)
     # url = 'http://mro.abiz.com'
     # goodsOutline(url)
 
     # 测试函数goodsUrlList(home_url)
-    url = 'http://mro.abiz.com/catalog/63011.htm'
-    goodsUrlList(url)
+    # url = 'http://mro.abiz.com/catalog/63011.htm'
+    # goodsUrlList(url)

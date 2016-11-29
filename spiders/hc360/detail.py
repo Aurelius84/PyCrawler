@@ -16,6 +16,7 @@ from scrapy.http import HtmlResponse
 from collections import defaultdict
 import time
 import re
+import io
 import chardet
 
 
@@ -116,7 +117,6 @@ def goodsDetail(detail_url):
     goods_data['source_url'] = detail_url
     # 解析html body必须是str类型
     body = getHtmlFromJs(detail_url)['content'].encode('utf-8')
-    #print body
     html = HtmlResponse(url=detail_url, body=str(body))
     # 名称
     goods_data['name'] = html.xpath('//*[@id="comTitle"]/text()').extract()[0]
@@ -126,20 +126,28 @@ def goodsDetail(detail_url):
     print goods_data['price']
     # 型号
     goods_data['type'] = ''
-    #goods_data['type'] = html.selector.xpath('//*[@id="pdetail"]/div[3]/table/tbody/tr/th[contains(text(),u"型号")]').extract()[0]
-    #//*[@id="pdetail"]/div[3]/table/tbody
-    #xpath('..').xpath('./td/text()')
-    #print goods_data['type']
-
     # 详情
-    goods_data['detail'] = html.selector.xpath('//*[@id="pdetail"]').extract()[0]
+    detaildiv = html.selector.xpath('//*[@id="pdetail"]')
+    detail_table = '\n'.join(detaildiv.xpath('//table').extract())
+    detail_p = ''.join(detaildiv.xpath('//p').extract())
+    goods_data['detail'] = detail_table + detail_p
     print goods_data['detail']
-    exit(0)
+    goods_data['detail'] = re.sub(ur'^<img.*>$', '', goods_data['detail'])
+    f = open('detail.txt', 'w')
+    f.write(goods_data['name'].encode('utf-8'))
+    f.write(goods_data['detail'].encode('utf-8'))
+    f.close()
     # 图片
-    goods_data['pics'] = html.selector.xpath('//*[@id="proSmallImg"]').xpath('@src').extract()[0].replace('../','http://www.runlian365.com/')
-
-    goods_data['storage'] = html.selector.xpath('/html/body/div[9]/div[1]/div[2]/div[2]/span[2]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
-    goods_data['lack_period'] = html.selector.xpath('/html/body/div[9]/div[1]/div[2]/div[3]/text()').extract()[0]
+    pics = []
+    for pic in html.selector.xpath('//*[@id="thumblist"]/li/div/a/img/@src').extract():
+        pics.append(pic.replace('100x100', '300x300'))
+    goods_data['pics'] = ('|').join(pics)
+    print goods_data['pics']
+    #库存
+    goods_data['storage'] = html.selector.xpath('//*[@id="supplyInfoNum"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
+    print goods_data['storage']
+    #供货时间
+    goods_data['lack_period'] = ''
     goods_data['created'] = int(time.time())
     goods_data['updated'] = int(time.time())
 
@@ -169,6 +177,6 @@ def parse(url):
 
 if __name__ == '__main__':
     # url = 'http://www.vipmro.com/product/587879'
-    url = 'http://b2b.hc360.com/supplyself/511911171.html'
+    url = 'http://b2b.hc360.com/supplyself/605891383.html'
     goodsDetail(url)
 

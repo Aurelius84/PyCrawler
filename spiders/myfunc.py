@@ -89,7 +89,6 @@ def getHtmlByVPN(url):
     #拼装请求头Proxy-Authorization的值
     keys = paramMap.keys()
     authHeader = "MYH-AUTH-MD5 " + str('&').join('%s=%s' % (key, paramMap[key]) for key in keys)
-    print authHeader
     #接下来使用蚂蚁动态代理进行访问
     proxy_handler = urllib2.ProxyHandler({"http" : '123.56.92.151:8123'})
     opener = urllib2.build_opener(proxy_handler)
@@ -99,4 +98,21 @@ def getHtmlByVPN(url):
     response = opener.open(request)
     return response.read()
 
+def handleTable(table_name,table_param):
+    '''
+    格式化table
+    :param table_name:参数名
+    :param table_param:参数
+    :return:table
+    '''
+
+    table = u'''<table border="1" cellpadding="0" cellspacing="0" width="100%"><tbody><tr><th colspan="2">产品参数</th></tr>'''
+
+    for i in xrange(len(table_name)):
+        line = u'''<tr><td class="name">{0}</td><td class="nr">{1}</td></tr>'''.format(table_name[i],table_param[i])
+        table += line
+
+    table += u'''</tbody></table>'''
+
+    return table
 

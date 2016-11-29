@@ -11,32 +11,16 @@
 @time: 16/11/26 下午15:45
 """
 
-
+import sys
+sys.path.append("..")
+reload(sys)
+sys.setdefaultencoding('utf8')
 from myfunc import *
 from scrapy.http import HtmlResponse
 from collections import defaultdict
 import itertools
 import time
 import re
-from bs4 import BeautifulSoup
-import requests
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
-
-def getHtmlByRequests(url):
-    s = requests.session()
-    headers_base = {'Connection': 'keep=alive',
-                    'Content-Encoding': 'gzip',
-                    'Content - Language': 'zh - CN',
-                    'Content - Type': 'text / html; charset = UTF - 8',
-                    'Server': 'nginx',
-                    'Set - Cookie': 'clientlanguage=zh_CN; path=/',
-                    'Transfer - Encoding': 'chunked',
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36',
-                    'Referer': 'http://mro.abiz.com/',}
-    response = s.get(url, headers=headers_base)
-    return response.content
 
 def goodsOutline(url):
     '''
@@ -97,6 +81,7 @@ def goodsUrlList(home_url):
         tmp_list = html.xpath('//*[@id="tableForm"]/div[1]/ul/li/p[1]/a/@href').extract()
         for tmp in tmp_list:
             url_list.append('http://mro.abiz.com' + tmp)
+    print len(url_list)
     return url_list
 
 
@@ -110,12 +95,13 @@ def goodsDetail(detail_url):
 
     body = getHtmlByRequests(detail_url)
     html = HtmlResponse(url=detail_url, body=str(body))
-
     goods_data = defaultdict()
+    # 详情页链接
+    goods_data['source_url'] = detail_url
     # 名称
     goods_data['name'] = html.xpath('//*[@id="productMainName"]/text()').extract()[0]
     # 价格
-    goods_data['price'] = html.selector.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/dl[1]/dd/strong/b/text()').extract()
+    goods_data['price'] = float(html.selector.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/dl[1]/dd/strong/b/text()').extract()[0])
     # 型号
     goods_data['type'] = html.selector.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/div/dl[2]/dd/text()').extract()[0]
     # 详情    table放在了一个iframe里面，需要访问一个新的链接
@@ -123,11 +109,9 @@ def goodsDetail(detail_url):
     tmp = getHtmlByRequests(tmp_url)
     tmp = HtmlResponse(url=tmp_url, body=str(tmp))
     detailInfo1 = tmp.selector.xpath('/html/body/div/table').extract()[0] # table
-    goods_data['detail'] = tmp.selector.xpath('/html/body/div/table').extract()[0]
-    print html.xpath('//*[@id="tbc_11"]/div/p[1]').extract()[0]
-    print html.xpath('//*[@id="tbc_11"]/div/p[2]').extract()[0]
-    print html.xpath('//*[@id="tbc_11"]/div').extract()[0]
-    exit()
+    detailInfo2 = html.xpath('//*[@id="tbc_11"]/div/p/text()[2]').extract()     # p标签内容
+    detailInfo2 = handle(detailInfo2)   # 将p标签里的内容封装成符合格式的p标签
+    goods_data['detail'] = detailInfo1 + '|' + detailInfo2
     # 图片，下面的while循环抓取多张图片，并拿到那张尺寸大的链接
     pics = []
     index = 1
@@ -173,17 +157,51 @@ def parseOptional(url):
     '''
     pass
 
+def handle(pLabel):
+    """
+    # 处理p标签
+    :param pLabel: p标签中包含的内容
+    :return: 符合要求的p标签语句
+    """
+    label = '<p>产品介绍：</p>\n'
+    for s in pLabel:
+        label += '<p>' + s.encode('utf-8').replace('\n', '') + '</p>\n'
+    label = unicode(label, 'utf-8')
+    # 格式
+    font = '<style>.default p{padding:0;margin:0;font-family:微软雅黑;' \
+           'font-size:18px;' \
+           'line-height:28px;color:#333;' \
+           'width:780px;text-indent:-5rem;margin-left:6.2rem}</style>'
+    font = unicode(font, 'utf-8')
+    return label + font
 
 if __name__ == '__main__':
 
     # 测试函数goodsDetail(detail_url)
-    url = 'http://mro.abiz.com/product/AB1000.htm'
-    print goodsDetail(url)
+    '''
+    url = 'http://mro.abiz.com/product/AA1571.htm'
+    detail = goodsDetail(url)
+    print detail['source_url']
+    print detail['name']
+    print detail['price']
+    print detail['type']
+    print detail['detail']
+    print detail['pics']
+    print detail['storage']
+    print detail['lack_period']
+    '''
+
+    # 下面三行是为了通过phantomjs抓到js渲染后的电商促销价
+    # body = getHtmlFromJs(url)['content'].encode('utf-8')
+    # html = HtmlResponse(url=url, body=str(body))
+    # print html.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/dl[1]/dd/strong/b/text()').extract()[0]
+
+
 
     # 测试函数goodsOutline(url)
     # url = 'http://mro.abiz.com'
     # goodsOutline(url)
 
     # 测试函数goodsUrlList(home_url)
-    # url = 'http://mro.abiz.com/catalog/63011.htm'
-    # goodsUrlList(url)
+    url = 'http://mro.abiz.com/catalog/63011.htm'
+    goodsUrlList(url)

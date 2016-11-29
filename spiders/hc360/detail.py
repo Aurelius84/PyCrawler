@@ -33,47 +33,23 @@ def goodsOutline(url):
     body = getHtml(url)
     html = HtmlResponse(url=url,body=body)
     # 一级类目名
-    first_grade = [u'建筑 矿用 防爆',u'泵 阀门']
-    #预存一部分XPATH的基址
-    basepath = ['//*[@id="newpro101"]/div[2]/ul','//*[@id="newpro401"]/div[2]/ul']
-    #//*[@id="newpro4"]/h3/a 泵 阀门 
-    for i in xrange(len(first_grade)):
-        # 二级类目名
-        if i == 0: 
-            #建筑 矿用 防爆
-            second_grade = html.selector.xpath(basepath[i]+u'/li/b/a/text()').extract()[1:9]
-        else:
-            second_grade = html.selector.xpath(basepath[i]+u'/li/b/a/text()').extract()
-        #print u'二级目录个数' + str(len(second_grade))
-        for j in xrange(len(second_grade)):
-            # 三级类目名和链接url
-            # //*[@id="newpro101"]/div[2]/ul/li[3]/a[1]
-            #//*[@id="newpro401"]/div[2]/ul/li[6]/a[1]
-            if i == 0:
-                third_grade_name = html.selector.xpath(basepath[i]+'/li[{0}]/a/text()'.format(j+2)).extract()
-                third_grade_url = html.selector.xpath(basepath[i]+'/li[{0}]/a/@href'.format(j+2)).extract()
-            else:
-                third_grade_name = html.selector.xpath(basepath[i]+'/li[{0}]/a/text()'.format(j+1)).extract()
-                third_grade_url = html.selector.xpath(basepath[i]+'/li[{0}]/a/@href'.format(j+1)).extract()
-            print('三级目录个数：'+str(len(third_grade_name)))
-            for k in xrange(len(third_grade_name)):
-                # 格式化数据
-                url_data = defaultdict()
-                url_data['url'] ='http://www.runlian365.com/' + third_grade_url[k]
-                url_data['third_grade'] = third_grade_name[k]
-                url_data['second_grade'] = second_grade[j]
-                url_data['first_grade'] = first_grade[i]
-                url_data['created'] = int(time.time())
-                url_data['updated'] = int(time.time())
-                
-                #print  url_data['first_grade'] + ':' + url_data['second_grade']+ ':'+url_data['third_grade']
-                # 保存
-                outline_data.append(url_data)
-            
-
+    first_grade = u'工程机械/ 机械工业'
+    # 二级目录名
+    second_grade= u'通用机械'
+    # 三级目录名
+    third_grade_name = [u'泵阀',u'风机',u'压缩机',u'减速机']
+    third_grade_url = ['http://s.hc360.com/?w=%B1%C3%B7%A7&mc=seller','http://s.hc360.com/?w=%B7%E7%BB%FA&mc=seller',
+                       'http://s.hc360.com/?w=%D1%B9%CB%F5%BB%FA&mc=seller','http://s.hc360.com/?w=%BC%F5%CB%D9%BB%FA&mc=seller']
+    url_data = {}
+    for x in xrange (0,4):
+        url_data['url'] = third_grade_url[x]
+        url_data['third_grade'] = third_grade_name[x]
+        url_data['second_grade'] = second_grade
+        url_data['first_grade'] = first_grade
+        url_data['created'] = int(time.time())
+        url_data['updated'] = int(time.time())
+        outline_data.append(url_data)
     return outline_data
-
- 
 
 def goodsUrlList(home_url):
     '''
@@ -120,32 +96,24 @@ def goodsDetail(detail_url):
     html = HtmlResponse(url=detail_url, body=str(body),encoding='utf-8')
     # 名称
     goods_data['name'] = html.xpath('//*[@id="comTitle"]/text()').extract()[0]
-    print goods_data['name']
+    #print goods_data['name']
     # 价格
     goods_data['price'] = html.selector.xpath('//*[@id="oriPriceTop"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
-    print goods_data['price']
+    #print goods_data['price']
     # 型号
     goods_data['type'] = ''
     # 详情
-    detaildiv = html.selector.xpath('//*[@id="pdetail"]')
-    detail_table = '\n'.join(detaildiv.xpath('//table').extract())
-    detail_p = ''.join(detaildiv.xpath('//p').extract())
-    goods_data['detail'] = detail_table + detail_p
+    goods_data['detail'] = html.selector.xpath('//*[@id="pdetail"]/div[3]/table').extract()[0]
     print goods_data['detail']
-    goods_data['detail'] = re.sub(ur'^<img.*>$', '', goods_data['detail'])
-    f = open('detail.txt', 'w')
-    f.write(goods_data['name'].encode('utf-8'))
-    f.write(goods_data['detail'].encode('utf-8'))
-    f.close()
     # 图片
     pics = []
     for pic in html.selector.xpath('//*[@id="thumblist"]/li/div/a/img/@src').extract():
         pics.append(pic.replace('100x100', '300x300'))
     goods_data['pics'] = ('|').join(pics)
-    print goods_data['pics']
+    #print goods_data['pics']
     #库存
     goods_data['storage'] = html.selector.xpath('//*[@id="supplyInfoNum"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
-    print goods_data['storage']
+    #print goods_data['storage']
     #供货时间
     goods_data['lack_period'] = ''
     goods_data['created'] = int(time.time())
@@ -163,20 +131,21 @@ def parse(url):
     # 解析html
     home_page = getHtml(url)
     html = HtmlResponse(url=url,body=str(home_page))
-    #总页数
-    page_total = 1
-    #三级列表下所有
+    # 考虑各种参数组合的三级分类地址
     url_list = []
-    if html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[2]/div/a[@class = "pages_next"]'):
-        page_total = html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[2]/div/a[last()-1]/text()').extract()[0].replace('...','')
-    elif html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[2]/div/a[last()]/text()'):
-        page_total = html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[2]/div/a[last()]/text()').extract()[0]
-    for x in xrange(1,int(page_total)+1):
-        url_list.append(url.replace('.html','-'+ str(x) + '.html'))
+    url_list.append(url)
+    page_total = html.selector.xpath('/html/body[@class="layout-1300"]/div[@class="s-layout"]' +
+                                     '/div[@class="s-mod-main"]/div[@class="cont-left"]/form' +
+                                     '/div[@class="s-mod-page"]/span[@class="total"]/text()').re(ur'\d*')
+    if page_total:
+        page = '&ee=' + str(page_total)
+    else:
+        page = '&ee=1'
+
     return url_list
 
 if __name__ == '__main__':
     # url = 'http://www.vipmro.com/product/587879'
-    url = 'http://b2b.hc360.com/supplyself/605891383.html'
+    url = 'http://b2b.hc360.com/supplyself/518255479.html'
     goodsDetail(url)
 

@@ -13,21 +13,21 @@
 @time: 16/11/26 下午5:21
 """
 import sys
-sys.path.append("..")
 import getopt
 from dataBase.mysql import M
+# from mysql import M
 from detail import *
-from dataMin.ETL import ETL
+# from dataMin.ETL import ETL
 
 def parseOutline():
     '''
     解析类目函数入口
     :return: True or False
     '''
-    url = 'http://www.sssmro.com/'
+    url = 'http://mro.abiz.com/'
     try:
         # 实例化 表
-        table_outline = M('test', 'sssmro_outline')
+        table_outline = M('abiz', 'abiz_outline')
     except Exception, e:
         print(Exception, ":", e)
         return False
@@ -49,10 +49,10 @@ def parseSeedUrl():
     :return:
     '''
     # 实例化 outline表
-    table_name = 'sssmro_outline'
-    table_seed_name = 'sssmro_url'
-    table_outline = M('test',table_name)
-    table_seed = M('test',table_seed_name)
+    table_name = 'abiz_outline'
+    table_seed_name = 'abiz_url'
+    table_outline = M('abiz',table_name)
+    table_seed = M('abiz',table_seed_name)
     # 查询所有url
     sql = 'select * from {0} order by id'.format(table_name)
     table_outline.cursor.execute(sql)
@@ -90,10 +90,10 @@ def parseDetail():
     解析详情函数入口
     :return:
     '''
-    table_seed_name = 'sssmro_url'
-    table_gov_name = 'sssmro_gov'
-    table_seed = M('test',table_seed_name)
-    table_gov = M('test',table_gov_name)
+    table_seed_name = 'abiz_url'
+    table_gov_name = 'abiz_gov'
+    table_seed = M('abiz',table_seed_name)
+    table_gov = M('abiz',table_gov_name)
     # 查询未入库种子
     sql = "select a.id,a.url from {0} a where a.url not in (select source_url from {1} order by id)  order by id".format(table_seed_name,table_gov_name)
     table_seed.cursor.execute(sql)
@@ -108,8 +108,8 @@ def parseDetail():
     table_gov.close()
 
 def etl():
-    site = 'sssmro'
-    db_name = 'test'
+    site = 'abiz'
+    db_name = 'abiz'
     # gov表
     gov_name = site + '_gov'
     table_gov = M(db_name,gov_name)
@@ -187,5 +187,5 @@ def main(argv):
 if __name__ == '__main__':
     # main(sys.argv)
     # etl()
-    # parseOutline()
-    parseSeedUrl()
+    parseOutline()  # 抓取三级目录首页链接
+    # parseSeedUrl()    # 抓取所有产品链接

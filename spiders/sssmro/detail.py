@@ -12,7 +12,6 @@
 """
 import sys
 sys.path.append("..")
-import myfunc
 from myfunc import *
 # from myfunc import getHtml
 # from myfunc import *
@@ -33,7 +32,7 @@ def goodsOutline(url):
     # 存储最后的三级列表页面
     outline_data = []
     # 解析页面
-    body = getHtml(url)
+    body = getHtmlByRequests(url)
     html = HtmlResponse(url=url, body=str(body))
     soup = BeautifulSoup(body, 'lxml')      # xpath不好使就用beautisoup
     # 抓取一级目录名及链接，这里只要以下内容：
@@ -46,7 +45,7 @@ def goodsOutline(url):
     # 这个for循环只处理了前两个一级目录，第三个里边只要两个二级目录
     for i in range(2):
         # 二级目录名及链接
-        body = getHtml(first_grade_url[i])
+        body = getHtmlByRequests(first_grade_url[i])
         html = HtmlResponse(url=first_grade_url[i], body=str(body))
         # soup = BeautifulSoup(body, 'lxml')
         # second_grade_name = soup.find_all()
@@ -66,7 +65,7 @@ def goodsOutline(url):
             del second_grade_url[7]
         for j in range(len(second_grade_name)):
             # 三级目录名及链接
-            body =  getHtml(second_grade_url[j])
+            body =  getHtmlByRequests(second_grade_url[j])
             html = HtmlResponse(url=second_grade_url[j], body=str(body))
             third_grade_name = []
             third_grade_url = []
@@ -94,7 +93,7 @@ def goodsOutline(url):
                         'http://www.sssmro.com/category.php?id=722&price_min=&price_max=']
     for j in range(len(second_grade_name)):
         # 三级目录名及链接
-        body = getHtml(second_grade_url[j])
+        body = getHtmlByRequests(second_grade_url[j])
         html = HtmlResponse(url=second_grade_url[j], body=str(body))
         third_grade_name = []
         third_grade_url = []
@@ -131,7 +130,7 @@ def goodsUrlList(home_url):
     # 保存所有goods的详情页url
     url_list = []
     # 解析首页，拿到该三级目录下有几页网页
-    body = getHtml(home_url)
+    body = getHtmlByRequests(home_url)
     html = HtmlResponse(url=home_url, body=str(body))
     # 先拿到该三级目录下的产品有几页
     num = int(html.xpath('/html/body/div[9]/div[2]/div[4]/form/ul/li[1]/text()').extract()[0][2:])
@@ -155,9 +154,8 @@ def goodsDetail(detail_url):
     # 因为前面为了去重加了'|1'，现在要去除之
     detail_url = detail_url.split('|')[0]
     # 解析网页
-    body = getHtml(detail_url)
+    body = getHtmlByRequests(detail_url)
     html = HtmlResponse(url=detail_url, body=str(body))
-
     # 根据页面中几个价格判断页面中有几个型号，然后创建几个dict
     sizes = html.xpath('//*[@id="relative_goods"]').extract()[0]    # //*[@id="relative_goods"]
     soup = BeautifulSoup(sizes, 'lxml')
@@ -170,9 +168,12 @@ def goodsDetail(detail_url):
     # 详情，包含两个标签，一个div，一个p，都是html语句，两个用换行符'\n'隔开
     detailInfo1 = html.xpath('//*[@id="sub11"]/div[1]').extract()[0]    # div
     try:
-        detailInfo2 = html.selector.xpath('//*[@id="sub11"]/div[3]/p').extract()[0]   # p
+        detailInfo2 = html.selector.xpath('//*[@id="sub11"]/div[3]/p/text()').extract()   # p标签里的内容
+        detailInfo2 = handle(detailInfo2)
     except:
         detailInfo2 = ''
+    print detailInfo2
+    exit()
     detailInfo = detailInfo1 + '\n' + detailInfo2
     # 图片
     # print(html.selector.xpath('//*[@id="spec-list"]/ul/li/img'))
@@ -222,6 +223,24 @@ def parseOptional(url):
     return url_list
     '''
     pass
+
+def handle(pLabel):
+    """
+    # 处理p标签
+    :param pLabel: p标签中包含的内容
+    :return: 符合要求的p标签语句
+    """
+    label = '<p>产品介绍：</p>\n'
+    for i in range(1, len(pLabel)):
+        label += '<p>' + pLabel[i].encode('utf-8').replace('\n', '') + '</p>\n'
+    label = unicode(label, 'utf-8')
+    # 格式
+    font = '<style>.default p{padding:0;margin:0;font-family:微软雅黑;' \
+           'font-size:18px;' \
+           'line-height:28px;color:#333;' \
+           'width:780px;text-indent:-5rem;margin-left:6.2rem}</style>'
+    font = unicode(font, 'utf-8')
+    return label + font
 
 if __name__ == '__main__':
 

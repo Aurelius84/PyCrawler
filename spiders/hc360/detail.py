@@ -116,8 +116,8 @@ def goodsDetail(detail_url):
     # 详情页链接
     goods_data['source_url'] = detail_url
     # 解析html body必须是str类型
-    body = getHtmlFromJs(detail_url)['content'].encode('utf-8')
-    html = HtmlResponse(url=detail_url, body=str(body))
+    body = getHtml(detail_url).decode('gb18030').encode('utf-8')
+    html = HtmlResponse(url=detail_url, body=str(body),encoding='utf-8')
     # 名称
     goods_data['name'] = html.xpath('//*[@id="comTitle"]/text()').extract()[0]
     print goods_data['name']

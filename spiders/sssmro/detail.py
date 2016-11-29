@@ -12,9 +12,8 @@
 """
 import sys
 sys.path.append("..")
-from myfunc import *
-# from myfunc import getHtml
 # from myfunc import *
+from spiders.myfunc import *
 from scrapy.http import HtmlResponse
 from collections import defaultdict
 import itertools
@@ -154,39 +153,38 @@ def goodsDetail(detail_url):
     # 因为前面为了去重加了'|1'，现在要去除之
     detail_url = detail_url.split('|')[0]
     # 解析网页
-    body = getHtmlByRequests(detail_url)
-    html = HtmlResponse(url=detail_url, body=str(body))
-    # 根据页面中几个价格判断页面中有几个型号，然后创建几个dict
-    sizes = html.xpath('//*[@id="relative_goods"]').extract()[0]    # //*[@id="relative_goods"]
-    soup = BeautifulSoup(sizes, 'lxml')
-    priceslist = soup.find_all('div', {'style': 'display:none;'})   # 存储包含有价格的html语句的list
-    num = len(priceslist)   # num表示了该页面中有几个产品
-    columnnum = len(soup.find('tr').find_all('td'))
-    tmplist = soup.find_all('td')
+    body = getHtml(detail_url)
+    html = HtmlResponse(url=detail_url, body=body)
+    # 价格
+    price_list = html.selector.xpath('//*[@id="relative_goods"]/tr/td[7]/text()').re(r'(\d+\.\d+)')
+    # 型号
+    type_list = html.selector.xpath('//*[@id="relative_goods"]/tr/td[2]/text()').extract()[1:]
     # 名称
-    name = html.xpath('//*[@id="spec-list"]/ul/li/img/@alt').extract()[0]
+    name = html.selector.xpath('//*[@id="spec-list"]/ul/li/img/@alt').extract()[0]
     # 详情，包含两个标签，一个div，一个p，都是html语句，两个用换行符'\n'隔开
-    detailInfo1 = html.xpath('//*[@id="sub11"]/div[1]').extract()[0]    # div
+    table_name = html.selector.xpath('//*[@id="sub11"]/div[1]/ul/li/div[1]/text()').extract()    # div
+    table_param = html.selector.xpath('//*[@id="sub11"]/div[1]/ul/li/div[2]/text()').extract()
+    print(table_param)
+    exit()
+    detailInfo1 = handleTable(table_name,table_param)
     try:
         detailInfo2 = html.selector.xpath('//*[@id="sub11"]/div[3]/p/text()').extract()   # p标签里的内容
         detailInfo2 = handle(detailInfo2)
     except:
         detailInfo2 = ''
-    print detailInfo2
-    exit()
     detailInfo = detailInfo1 + '\n' + detailInfo2
+
     # 图片
-    # print(html.selector.xpath('//*[@id="spec-list"]/ul/li/img'))
     pics = []
     for pic in html.selector.xpath('//*[@id="spec-list"]/ul/li/img'):
         # 去除图片尺寸,方法图片('//*[@id="spec-n1"]/img')
         pics.append( 'www.sssmro.com/'+ pic.xpath('@src').extract()[0])
     pics = '|'.join(pics)
     goodslist = []
-    for i in range(num):
+    for i in range(len(price_list)):
         goodslist.append(defaultdict())
-        goodslist[i]['price'] = float(priceslist[i].string.replace('\n\t\t\t   \n              ', '').replace(' \n              ', ''))
-        goodslist[i]['type'] = tmplist[columnnum * (i + 1) + 1].string
+        goodslist[i]['price'] = float(price_list[i])
+        goodslist[i]['type'] = type_list[i]
         goodslist[i]['source_url'] = detail_url + '|' + str(i + 1)
         goodslist[i]['name'] = name
         goodslist[i]['detail'] = detailInfo
@@ -195,6 +193,10 @@ def goodsDetail(detail_url):
         goodslist[i]['lack_period'] = ''
         goodslist[i]['created'] = int(time.time())
         goodslist[i]['updated'] = int(time.time())
+        goodslist[i]['first_grade'] = ''
+        goodslist[i]['second_grade'] = ''
+        goodslist[i]['third_grade'] = ''
+
     return goodslist
 
 def parseOptional(url):
@@ -245,7 +247,7 @@ def handle(pLabel):
 if __name__ == '__main__':
 
     # 测试函数goodsDetail(detail_url)
-    url = 'http://www.sssmro.com/goods.php?id=30419'
+    url = 'http://www.sssmro.com//goods.php?id=30419'
     llist = goodsDetail(url)
 
     # for i in range(len(llist)):

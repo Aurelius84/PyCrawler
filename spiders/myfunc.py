@@ -13,6 +13,23 @@
 import urllib
 import urllib2
 from tornado_fetcher import Fetcher
+import requests
+
+
+def getHtmlByRequests(url):
+    s = requests.session()
+    headers_base = {'Connection': 'keep=alive',
+                    'Content-Encoding': 'gzip',
+                    'Content - Language': 'zh - CN',
+                    'Content - Type': 'text / html; charset = UTF - 8',
+                    'Server': 'nginx',
+                    'Set - Cookie': 'clientlanguage=zh_CN; path=/',
+                    'Transfer - Encoding': 'chunked',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36',
+                    'Referer': 'http://mro.abiz.com/',}
+    response = s.get(url, headers=headers_base)
+    return response.content
+
 
 def getHtml(url,post_data=''):
     '''

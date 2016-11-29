@@ -12,7 +12,7 @@
 @file: fetch.py
 @time: 16/11/26 下午5:21
 """
-
+import sys
 import getopt
 from dataBase.mysql import M
 from detail import *

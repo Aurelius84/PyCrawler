@@ -14,8 +14,8 @@
 """
 import sys
 import getopt
-from dataBase.mysql import M
-# from mysql import M
+# from dataBase.mysql import M
+from mysql import M
 from detail import *
 # from dataMin.ETL import ETL
 
@@ -24,7 +24,7 @@ def parseOutline():
     解析类目函数入口
     :return: True or False
     '''
-    url = 'http://mro.abiz.com/'
+    url = 'http://mro.abiz.com'
     try:
         # 实例化 表
         table_outline = M('abiz', 'abiz_outline')
@@ -187,5 +187,5 @@ def main(argv):
 if __name__ == '__main__':
     # main(sys.argv)
     # etl()
-    parseOutline()  # 抓取三级目录首页链接
-    # parseSeedUrl()    # 抓取所有产品链接
+    # parseOutline()  # 抓取三级目录首页链接
+    parseSeedUrl()    # 抓取所有产品链接

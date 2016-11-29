@@ -69,6 +69,7 @@ def goodsUrlList(home_url):
     :return:url列表
     '''
     # 该网站不用加条件遍历所有情况就能拿到所有产品的url
+    print home_url
     body = getHtmlByRequests(home_url)
     html = HtmlResponse(url=home_url, body=str(body))
     url_list = []

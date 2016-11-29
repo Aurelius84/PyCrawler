@@ -131,16 +131,17 @@ def parse(url):
     # 解析html
     home_page = getHtml(url)
     html = HtmlResponse(url=url,body=str(home_page))
-    #总页数
-    page_total = 1
-    #三级列表下所有
+    # 考虑各种参数组合的三级分类地址
     url_list = []
-    if html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[2]/div/a[@class = "pages_next"]'):
-        page_total = html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[2]/div/a[last()-1]/text()').extract()[0].replace('...','')
-    elif html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[2]/div/a[last()]/text()'):
-        page_total = html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[2]/div/a[last()]/text()').extract()[0]
-    for x in xrange(1,int(page_total)+1):
-        url_list.append(url.replace('.html','-'+ str(x) + '.html'))
+    url_list.append(url)
+    page_total = html.selector.xpath('/html/body[@class="layout-1300"]/div[@class="s-layout"]' +
+                                     '/div[@class="s-mod-main"]/div[@class="cont-left"]/form' +
+                                     '/div[@class="s-mod-page"]/span[@class="total"]/text()').re(ur'\d*')
+    if page_total:
+        page = '&ee=' + str(page_total)
+    else:
+        page = '&ee=1'
+
     return url_list
 
 if __name__ == '__main__':

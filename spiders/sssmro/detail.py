@@ -164,8 +164,7 @@ def goodsDetail(detail_url):
     # 详情，包含两个标签，一个div，一个p，都是html语句，两个用换行符'\n'隔开
     table_name = html.selector.xpath('//*[@id="sub11"]/div[1]/ul/li/div[1]/text()').extract()    # div
     table_param = html.selector.xpath('//*[@id="sub11"]/div[1]/ul/li/div[2]/text()').extract()
-    print(table_param)
-    exit()
+
     detailInfo1 = handleTable(table_name,table_param)
     try:
         detailInfo2 = html.selector.xpath('//*[@id="sub11"]/div[3]/p/text()').extract()   # p标签里的内容

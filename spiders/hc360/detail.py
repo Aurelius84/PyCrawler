@@ -120,32 +120,24 @@ def goodsDetail(detail_url):
     html = HtmlResponse(url=detail_url, body=str(body),encoding='utf-8')
     # 名称
     goods_data['name'] = html.xpath('//*[@id="comTitle"]/text()').extract()[0]
-    print goods_data['name']
+    #print goods_data['name']
     # 价格
     goods_data['price'] = html.selector.xpath('//*[@id="oriPriceTop"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
-    print goods_data['price']
+    #print goods_data['price']
     # 型号
     goods_data['type'] = ''
     # 详情
-    detaildiv = html.selector.xpath('//*[@id="pdetail"]')
-    detail_table = '\n'.join(detaildiv.xpath('//table').extract())
-    detail_p = ''.join(detaildiv.xpath('//p').extract())
-    goods_data['detail'] = detail_table + detail_p
+    goods_data['detail'] = html.selector.xpath('//*[@id="pdetail"]/div[3]/table').extract()[0]
     print goods_data['detail']
-    goods_data['detail'] = re.sub(ur'^<img.*>$', '', goods_data['detail'])
-    f = open('detail.txt', 'w')
-    f.write(goods_data['name'].encode('utf-8'))
-    f.write(goods_data['detail'].encode('utf-8'))
-    f.close()
     # 图片
     pics = []
     for pic in html.selector.xpath('//*[@id="thumblist"]/li/div/a/img/@src').extract():
         pics.append(pic.replace('100x100', '300x300'))
     goods_data['pics'] = ('|').join(pics)
-    print goods_data['pics']
+    #print goods_data['pics']
     #库存
     goods_data['storage'] = html.selector.xpath('//*[@id="supplyInfoNum"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
-    print goods_data['storage']
+    #print goods_data['storage']
     #供货时间
     goods_data['lack_period'] = ''
     goods_data['created'] = int(time.time())
@@ -177,6 +169,6 @@ def parse(url):
 
 if __name__ == '__main__':
     # url = 'http://www.vipmro.com/product/587879'
-    url = 'http://b2b.hc360.com/supplyself/605891383.html'
+    url = 'http://b2b.hc360.com/supplyself/518255479.html'
     goodsDetail(url)
 

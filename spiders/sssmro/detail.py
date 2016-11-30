@@ -156,7 +156,11 @@ def goodsDetail(detail_url):
     body = getHtml(detail_url)
     html = HtmlResponse(url=detail_url, body=body)
     # 价格
+<<<<<<< HEAD
     price_list = html.selector.xpath('//*[@id="relative_goods"]/tr/td/text()').re(r'(\d+\.\d+)')
+=======
+    price_list = html.selector.xpath('//*[@id="relative_goods"]/tr/td/text()').re(u'(\d+\.\d+)元')
+>>>>>>> 4167add0dff991bf4eee7ff447eeed0ee04972fb
     # 型号
     type_list = html.selector.xpath('//*[@id="relative_goods"]/tr/td[2]/text()').extract()[1:]
     # 名称
@@ -245,7 +249,11 @@ def handle(pLabel):
 if __name__ == '__main__':
 
     # 测试函数goodsDetail(detail_url)
+<<<<<<< HEAD
     url = 'http://www.sssmro.com/goods.php?id=30419'
+=======
+    url = 'http://www.sssmro.com//goods.php?id=26237'
+>>>>>>> 4167add0dff991bf4eee7ff447eeed0ee04972fb
     llist = goodsDetail(url)
 
     # for i in range(len(llist)):

@@ -99,6 +99,7 @@ def parseDetail():
     table_seed.cursor.execute(sql)
     seed_urls = table_seed.cursor.fetchall()
     for seed in seed_urls:
+        print(seed['url'])
         detail = goodsDetail(seed['url'])
         print(len(detail))
         for _ in xrange(len(detail)):

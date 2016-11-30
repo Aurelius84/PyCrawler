@@ -17,6 +17,9 @@ import hashlib
 import time
 import requests
 import random
+import httplib
+httplib.HTTPConnection._http_vsn = 10
+httplib.HTTPConnection._http_vsn_str = 'HTTP/1.0'
 
 user_agent_list = [
     'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -90,6 +93,7 @@ def getHtmlByVPN(url,headers=''):
     :param url:
     :return:
     '''
+
     #请替换appkey和secret
     appkey = "151161671"
     secret = "f7d28632cdf6ce18a2cb3672376d166d"

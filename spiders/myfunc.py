@@ -17,7 +17,9 @@ import hashlib
 import time
 import requests
 import random
+from scrapy.http import HtmlResponse
 import httplib
+import socket
 httplib.HTTPConnection._http_vsn = 10
 httplib.HTTPConnection._http_vsn_str = 'HTTP/1.0'
 
@@ -139,3 +141,69 @@ def handleTable(table_name,table_param):
 
     return table
 
+def getProxyList():
+    '''
+    获取快代理的免费ip列表
+    :return:
+    '''
+    import gzip
+    from StringIO import StringIO
+    headers = {
+        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Encoding':'gzip, deflate, sdch',
+        'Accept-Language':'zh-CN,zh;q=0.8,en;q=0.6',
+        # 'Cache-Control':'max-age=0',
+        # 'Connection':'keep-alive',
+        # 'Cookie':'channelid=0; sid=1480509512181682; _ga=GA1.2.931640328.1480510967',
+        'Host':'www.kuaidaili.com',
+        'Referer':'http://www.kuaidaili.com/pricing/',
+        'Upgrade-Insecure-Requests':'1',
+        'User-Agent':'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.76 Mobile Safari/537.36'
+    }
+    total_page = 3
+    ips = []
+    ports = []
+    for page in xrange(1,total_page+1):
+        url = 'http://www.kuaidaili.com/proxylist/{0}'.format(page)
+        req = urllib2.Request(url,headers=headers)
+        buff = StringIO(urllib2.urlopen(req).read())
+        f = gzip.GzipFile(fileobj=buff)
+        body = f.read()
+        html = HtmlResponse(url=url,body=body)
+        cur_ips = html.selector.xpath('//*[@id="index_free_list"]/table/tbody/tr/td[1]/text()').extract()
+        cur_ports = html.selector.xpath('//*[@id="index_free_list"]/table/tbody/tr/td[2]/text()').extract()
+        types = html.selector.xpath('//*[@id="index_free_list"]/table/tbody/tr/td[3]/text()').extract()
+        if cur_ips and len(cur_ips) == len(cur_ports):
+            for i in xrange(len(cur_ips)):
+                if types[i] == u'高匿名':
+                    ips.append(cur_ips[i])
+                    ports.append(cur_ports[i])
+    return map(lambda ip,port:ip+':'+port,ips,ports)
+
+def validateIp(ips):
+    '''
+    检测种子存活度
+    :param ips:
+    :return:
+    '''
+    url = "http://ip.chinaz.com/getip.aspx"
+    socket.setdefaulttimeout(3)
+    live_ips = []
+    for i in xrange(len(ips)):
+        try:
+            proxy_host = "http://"+ips[i]
+            proxy_temp = {"http":proxy_host}
+            res = urllib.urlopen(url,proxies=proxy_temp).read()
+            live_ips.append(ips[i])
+            # if live_ips:
+            #     break
+            print ips[i]
+            print(res)
+        except Exception,e:
+            print(ips[i],Exception,e)
+    return live_ips
+
+if __name__ == '__main__':
+    ips = getProxyList()
+    print(ips)
+    print(validateIp(ips))

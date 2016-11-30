@@ -94,7 +94,7 @@ def goodsDetail(detail_url):
     :return: 因为每个详情页面可能会产生多条数据，所以返回值是一个以dict为元素的list，其中每一个dict是一条数据
     '''
     # 解析网页
-    body = getHtmlByVPN(detail_url).encode('utf-8')
+    body = getHtmlByRequests(detail_url).encode('utf-8')
     html = HtmlResponse(url=detail_url, body=str(body))
     goods_data = defaultdict()
     print '拿到数据，正在解析...'
@@ -102,13 +102,14 @@ def goodsDetail(detail_url):
     goods_data['source_url'] = detail_url
     # 名称
     goods_data['name'] = html.xpath('//*[@id="productMainName"]/text()').extract()[0]
+    # print goods_data['name']
     # 价格
     goods_data['price'] = float(html.selector.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/dl[1]/dd/strong/b/text()').extract()[0])
     # 型号
     goods_data['type'] = html.selector.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/div/dl[2]/dd/text()').extract()[0]
     # 详情    table放在了一个iframe里面，需要访问一个新的链接
     tmp_url = 'http://mro.abiz.com/' + html.selector.xpath('//*[@id="rightFrame"]/@src').extract()[0]
-    tmp = getHtmlByVPN(tmp_url).encode('gbk', 'ignore')
+    tmp = getHtmlByRequests(tmp_url).encode('gbk', 'ignore')
     tmp = HtmlResponse(url=tmp_url, body=str(tmp))
     detailInfo1 = tmp.selector.xpath('/html/body/div/table').extract()[0] # table
     table_name = tmp.xpath('/html/body/div/table/tbody/tr/td[1]/text()').extract()
@@ -202,7 +203,7 @@ if __name__ == '__main__':
     # 测试函数goodsDetail(detail_url)
 
     # url = 'http://mro.abiz.com/product/AA1571.htm'
-    url = 'http://mro.abiz.com/product/AA1552.htm'
+    url = 'http://mro.abiz.com/product/AC1014.htm'
     detail = goodsDetail(url)
     print detail['source_url']
     print detail['name']

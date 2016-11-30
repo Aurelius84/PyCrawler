@@ -101,7 +101,7 @@ def parseDetail():
     table_seed.cursor.execute(sql)
     seed_urls = table_seed.cursor.fetchall()
     for seed in seed_urls:
-        # time.sleep(random.randint(1, 3))
+        time.sleep(random.randint(1, 3))
         print seed['url']
         flag = True
         start = time.time()

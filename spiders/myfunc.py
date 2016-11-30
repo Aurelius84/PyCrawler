@@ -84,7 +84,7 @@ def getHtmlFromJs(url):
           )
     return fetcher.phantomjs_fetch(url)
 
-def getHtmlByVPN(url):
+def getHtmlByVPN(url,headers=''):
     '''
     蚂蚁代理获取页面
     :param url:
@@ -110,7 +110,8 @@ def getHtmlByVPN(url):
     #接下来使用蚂蚁动态代理进行访问
     proxy_handler = urllib2.ProxyHandler({"http" : '123.56.92.151:8123'})
     opener = urllib2.build_opener(proxy_handler)
-    request = urllib2.Request(url)
+    # 伪装浏览器
+    request = urllib2.Request(url,headers=headers)
     # 将authHeader放入请求头中即可,注意authHeader必须在每次请求时都重新计算，要不然会因为时间误差而认证失败
     request.add_header('Proxy-Authorization', authHeader)
     response = opener.open(request)

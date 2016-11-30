@@ -12,8 +12,8 @@
 """
 import sys
 sys.path.append("..")
-# from myfunc import *
-from spiders.myfunc import *
+from myfunc import *
+# from spiders.myfunc import *
 from scrapy.http import HtmlResponse
 from collections import defaultdict
 import itertools
@@ -156,7 +156,7 @@ def goodsDetail(detail_url):
     body = getHtml(detail_url)
     html = HtmlResponse(url=detail_url, body=body)
     # 价格
-    price_list = html.selector.xpath('//*[@id="relative_goods"]/tr/td[7]/text()').re(r'(\d+\.\d+)')
+    price_list = html.selector.xpath('//*[@id="relative_goods"]/tr/td/text()').re(r'(\d+\.\d+)')
     # 型号
     type_list = html.selector.xpath('//*[@id="relative_goods"]/tr/td[2]/text()').extract()[1:]
     # 名称
@@ -164,8 +164,7 @@ def goodsDetail(detail_url):
     # 详情，包含两个标签，一个div，一个p，都是html语句，两个用换行符'\n'隔开
     table_name = html.selector.xpath('//*[@id="sub11"]/div[1]/ul/li/div[1]/text()').extract()    # div
     table_param = html.selector.xpath('//*[@id="sub11"]/div[1]/ul/li/div[2]/text()').extract()
-
-    detailInfo1 = handleTable(table_name,table_param)
+    detailInfo1 = handleTable(table_name, table_param)
     try:
         detailInfo2 = html.selector.xpath('//*[@id="sub11"]/div[3]/p/text()').extract()   # p标签里的内容
         detailInfo2 = handle(detailInfo2)
@@ -246,7 +245,7 @@ def handle(pLabel):
 if __name__ == '__main__':
 
     # 测试函数goodsDetail(detail_url)
-    url = 'http://www.sssmro.com//goods.php?id=30419'
+    url = 'http://www.sssmro.com/goods.php?id=30419'
     llist = goodsDetail(url)
 
     # for i in range(len(llist)):

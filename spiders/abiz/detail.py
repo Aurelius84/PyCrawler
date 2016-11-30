@@ -21,6 +21,7 @@ from collections import defaultdict
 import itertools
 import time
 import re
+import requests
 
 def goodsOutline(url):
     '''
@@ -31,7 +32,7 @@ def goodsOutline(url):
     # 存储最后的三级列表页面
     outline_data = []
     # 解析页面
-    body = getHtml(url)
+    body = getHtml(url).encode('utf-8')
     html = HtmlResponse(url=url, body=str(body))
     # soup = BeautifulSoup(body, 'lxml')      # xpath不好使就用beautisoup
     # 抓取一级目录名及链接，这里只要以下内容：
@@ -93,10 +94,10 @@ def goodsDetail(detail_url):
     :return: 因为每个详情页面可能会产生多条数据，所以返回值是一个以dict为元素的list，其中每一个dict是一条数据
     '''
     # 解析网页
-
-    body = getHtmlByRequests(detail_url)
+    body = getHtmlByVPN(detail_url).encode('utf-8')
     html = HtmlResponse(url=detail_url, body=str(body))
     goods_data = defaultdict()
+    print '拿到数据，正在解析...'
     # 详情页链接
     goods_data['source_url'] = detail_url
     # 名称
@@ -107,9 +108,12 @@ def goodsDetail(detail_url):
     goods_data['type'] = html.selector.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/div/dl[2]/dd/text()').extract()[0]
     # 详情    table放在了一个iframe里面，需要访问一个新的链接
     tmp_url = 'http://mro.abiz.com/' + html.selector.xpath('//*[@id="rightFrame"]/@src').extract()[0]
-    tmp = getHtmlByRequests(tmp_url)
+    tmp = getHtmlByVPN(tmp_url).encode('gbk', 'ignore')
     tmp = HtmlResponse(url=tmp_url, body=str(tmp))
     detailInfo1 = tmp.selector.xpath('/html/body/div/table').extract()[0] # table
+    table_name = tmp.xpath('/html/body/div/table/tbody/tr/td[1]/text()').extract()
+    table_param = tmp.xpath('/html/body/div/table/tbody/tr/td[2]/text()').extract()
+    detailInfo1 = handleTable(table_name, table_param)
     detailInfo2 = html.xpath('//*[@id="tbc_11"]/div/p/text()[2]').extract()     # p标签内容
     detailInfo2 = handle(detailInfo2)   # 将p标签里的内容封装成符合格式的p标签
     goods_data['detail'] = detailInfo1 + '|' + detailInfo2
@@ -125,8 +129,10 @@ def goodsDetail(detail_url):
             break
     goods_data['pics'] = '|'.join(pics)
     goods_data['storage'] = ''
-    goods_data['lack_period'] = re.findall(r'\d*',
-                                           str(html.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/div/dl[4]/dd/text()').extract()[0]))[0]
+    try:
+        goods_data['lack_period'] = html.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/div/dl[4]/dd/text()').extract()[0][:-5]
+    except:
+        goods_data['lack_period'] = html.xpath('/html/body/div[5]/div/div[2]/div[2]/div[1]/div/dl[3]/dd/text()').extract()[0][:-5]
     goods_data['created'] = int(time.time())
     goods_data['updated'] = int(time.time())
     return goods_data
@@ -176,11 +182,27 @@ def handle(pLabel):
     font = unicode(font, 'utf-8')
     return label + font
 
+def getPics(url, name, path):
+    """
+    # 抓取图片
+    :param url: 图片链接，多张图片链接以'|'分隔
+    :param name: 图片名字，可以是商品型号或其他（可以唯一区分即可）；多张图片的话
+    :param path:
+    :return:
+    """
+    name = '7-2506-S.jpg'
+    path = u'E:\Spider/'
+    filename = path + name
+    f = open(filename, 'wb')
+    f.write(requests.get(url).content)
+    f.close()
+
 if __name__ == '__main__':
 
     # 测试函数goodsDetail(detail_url)
-    '''
-    url = 'http://mro.abiz.com/product/AA1571.htm'
+
+    # url = 'http://mro.abiz.com/product/AA1571.htm'
+    url = 'http://mro.abiz.com/product/AA1552.htm'
     detail = goodsDetail(url)
     print detail['source_url']
     print detail['name']
@@ -190,7 +212,8 @@ if __name__ == '__main__':
     print detail['pics']
     print detail['storage']
     print detail['lack_period']
-    '''
+
+
 
     # 下面三行是为了通过phantomjs抓到js渲染后的电商促销价
     # body = getHtmlFromJs(url)['content'].encode('utf-8')
@@ -204,5 +227,5 @@ if __name__ == '__main__':
     # goodsOutline(url)
 
     # 测试函数goodsUrlList(home_url)
-    url = 'http://mro.abiz.com/catalog/63011.htm'
-    goodsUrlList(url)
+    # url = 'http://mro.abiz.com/catalog/63011.htm'
+    # goodsUrlList(url)

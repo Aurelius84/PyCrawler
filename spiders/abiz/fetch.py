@@ -17,6 +17,8 @@ import getopt
 # from dataBase.mysql import M
 from mysql import M
 from detail import *
+import time
+import random
 # from dataMin.ETL import ETL
 
 def parseOutline():
@@ -99,10 +101,22 @@ def parseDetail():
     table_seed.cursor.execute(sql)
     seed_urls = table_seed.cursor.fetchall()
     for seed in seed_urls:
-        detail = goodsDetail(seed['url'])
-        print(len(detail))
+        # time.sleep(random.randint(1, 3))
+        print seed['url']
+        flag = True
+        start = time.time()
+        while(flag):
+            try:
+                detail = goodsDetail(seed['url'])
+                flag = False
+            except:
+                flag = True
+                time.sleep(random.randint(0, 1))
+        print detail
+        end = time.time()
+        print('抓取解析本条数据耗时 %f sec.' % (end- start))
         # 插入数据库
-        table_gov.insertAll(detail)
+        table_gov.insertOne(detail)
     # 关闭数据库连接
     table_seed.close()
     table_gov.close()
@@ -188,4 +202,6 @@ if __name__ == '__main__':
     # main(sys.argv)
     # etl()
     # parseOutline()  # 抓取三级目录首页链接
-    parseSeedUrl()    # 抓取所有产品链接
+    # parseSeedUrl()    # 抓取所有产品链接
+    parseDetail()   # 抓取所有产品详情
+

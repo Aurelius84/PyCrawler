@@ -19,6 +19,7 @@ import re
 from StringIO import StringIO
 import gzip
 import zlib
+import json
 
 
 
@@ -66,9 +67,8 @@ def goodsUrlList(home_url):
     # 保存所有goods的详情页url
     url_list = []
     # 解析html
-    buff = StringIO(getHtmlByVPN(home_url))
-    f = gzip.GzipFile(fileobj=buff)
-    home_page = f.read().decode('gb18030').encode('utf8')
+    d = zlib.decompressobj(16+zlib.MAX_WBITS)
+    home_page = d.decompress(getHtmlByVPN(home_url)).decode('gb18030').encode('utf8')
     html = HtmlResponse(url=home_url,body=home_page)
     # 获取总数
     total_num = html.selector.xpath('/html/body/div[3]/div[3]/span/em/text()').re(r'(\d+)')
@@ -76,8 +76,8 @@ def goodsUrlList(home_url):
         return False
     # 合计总页数
     total_num = int(total_num[0])
-    if total_num > 7000:
-        total_num = 7000
+    if total_num > 3000:
+        total_num = 3000
     total_page = total_num/20
     # 获取关键get参数
     get_data = home_url.split('?')[1][:-1]
@@ -108,7 +108,7 @@ def goodsUrlList(home_url):
     #     exit()
     # print(len(url_list))
     # print(url_list)
-    return url_list
+    return list(set(url_list))
 
 def goodsDetail(detail_url):
     '''
@@ -124,29 +124,47 @@ def goodsDetail(detail_url):
     html = HtmlResponse(url=detail_url, body=str(body),encoding='utf-8')
     # 名称
     goods_data['name'] = html.xpath('//*[@id="comTitle"]/text()').extract()[0]
-    #print goods_data['name']
     # 价格
-    goods_data['price'] = html.selector.xpath('//*[@id="oriPriceTop"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
-    #print goods_data['price']
-    # 型号
+    goods_data['price'] = 0
+    price = html.selector.xpath('//*[@id="oriPriceTop"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')
+    if price:
+        goods_data['price'] = price[0]
+    # 型号 从参数里获取
+    param_name = html.selector.xpath('//*[@id="pdetail"]/div[3]/table/tr/th/h4/text()').extract()
+    param_value = html.selector.xpath('//*[@id="pdetail"]/div[3]/table/tr/td/text()').extract()
     goods_data['type'] = ''
-    # 详情
-    goods_data['detail'] = html.selector.xpath('//*[@id="pdetail"]/div[3]/table').extract()[0]
+    if u'型号：' in param_name:
+        goods_data['type'] = param_value[param_name.index(u'型号：')].strip()
     # 图片
     pics = []
     for pic in html.selector.xpath('//*[@id="thumblist"]/li/div/a/img/@src').extract():
         pics.append(pic.replace('100x100', '300x300'))
     goods_data['pics'] = ('|').join(pics)
-    #print goods_data['pics']
-    #库存
-    goods_data['storage'] = html.selector.xpath('//*[@id="supplyInfoNum"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
-    #print goods_data['storage']
+    # 商品id
+    product_id = re.search(r'\/(\d+)\.html',detail_url).group(1)
+    # 详情url
+    js_url = 'http://detail.b2b.hc360.com/detail/turbine/action/ajax.XssFilteringServicesAjaxAction?bcid={0}'.format(product_id)
+    detail_text = ''
+    try:
+        detail_body = getHtmlByVPN(js_url).decode('gb18030').encode('utf8')
+        detail_html = HtmlResponse(url=js_url,body=json.loads(detail_body[1:-1])['html'],encoding='utf8')
+        detail_text = ''.join(detail_html.selector.xpath('//span/text()').extract())
+    except Exception,e:
+        print(Exception,e)
+    # 详情
+    goods_data['detail'] = ''
+    if detail_text != '':
+        style = u'<style>.default p{padding:0;margin:0;font-family:微软雅黑;font-size:18px;line-height:28px;color:#333;width:780px;text-indent:-5rem;margin-left:6.2rem}</style>'
+        goods_data['detail'] = u'<p>产品介绍: </p><p>{0}</p>{1}'.format(detail_text,style)
+    # print(json.loads(detail_body[1:-1])['html'])
+    goods_data['storage'] = ''
+    storage = html.selector.xpath('//*[@id="supplyInfoNum"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')
+    if storage:
+        goods_data['storage'] = storage[0]
     #供货时间
     goods_data['lack_period'] = ''
     goods_data['created'] = int(time.time())
     goods_data['updated'] = int(time.time())
-
-    # print(goods_data)
     return goods_data
 
 def parse(url):
@@ -184,6 +202,6 @@ def parse(url):
 
 if __name__ == '__main__':
     # url = 'http://b2b.hc360.com/supplyself/518255479.html'
-    # url = 'http://s.hc360.com/cgi-bin/mmts?newurl=2&w=%B1%C3%B7%A7&mc=seller&h=DCE4297FABADA215'
-    print goodsOutline()
+    url = 'http://b2b.hc360.com/supplyself/586321734.html'
+    print goodsDetail(url)
 

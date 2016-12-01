@@ -117,7 +117,10 @@ def getHtmlByVPN(url,headers=''):
     proxy_handler = urllib2.ProxyHandler({"http" : '123.56.92.151:8123'})
     opener = urllib2.build_opener(proxy_handler)
     # 伪装浏览器
-    request = urllib2.Request(url,headers=headers)
+    if headers:
+        request = urllib2.Request(url,headers=headers)
+    else:
+        request = urllib2.Request(url)
     # 将authHeader放入请求头中即可,注意authHeader必须在每次请求时都重新计算，要不然会因为时间误差而认证失败
     request.add_header('Proxy-Authorization', authHeader)
     response = opener.open(request)

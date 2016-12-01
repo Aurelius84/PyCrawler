@@ -110,33 +110,62 @@ def goodsDetail(detail_url):
     :param detail_url: 详情页url
     :return: 各个字段信息 dict
     '''
+    print detail_url
+    starttime = time.time()
     goods_data = defaultdict()
     # 详情页链接
     goods_data['source_url'] = detail_url
     # 解析html body必须是str类型
-    body = getHtml(detail_url)
+    try:
+        body = getHtml(detail_url)
+    except:
+        print 'err getHtml()'
+
+    #print body
     html = HtmlResponse(url=detail_url,body=str(body))
     # 名称
-    goods_data['name'] = html.xpath('/html/body/div[4]/div[2]/div/h1/a/text()').extract()[0]
+    try:
+        goods_data['name'] = html.xpath('/html/body/div[4]/div[2]/div/h1/a/text()').extract()[0]
+    except:
+        print 'err in getting name '
     # 价格(为毛啊1.sub函数第二个参数设置为空输出就没了2.对价格做个lstrip()输出又没了)
-    goods_data['price'] = html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[1]/b/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
-    #print goods_data['price'] 
+    try:
+        goods_data['price'] = html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[1]/b/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
+    except:
+        print 'err in getting price'
+    #print goods_data['price']
     # 型号
-    goods_data['type'] = re.sub(ur'^.{3}','',html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[2]/span[1]/font[2]/text()').extract()[0],count = 1)
+    try:
+        goods_data['type'] = re.sub(ur'^.{3}','',html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[2]/span[1]/font[2]/text()').extract()[0],count = 1)
+    except:
+        print 'err in getting type'
     # 详情
-    detail_table = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/table').extract()
-    detail_p = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/p/text()').extract()
-    #goods_data['detail'] = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]').extract()[0]
-    goods_data['detail'] = str(detail_table + detail_p).encode('utf-8')
-    goods_data['detail'] = re.sub(ur'^<img.*>$','',goods_data['detail'])
+    try:
+        detail_p = html.selector.xpath(
+            '/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]//p/text()').extract()
+        detail_p = handle(detail_p)
+        goods_data['detail'] = detail_p
+    except:
+        table_name = html.selector.xpath(
+            '/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/table/tr/td/text()').extract()
+        table_para = html.selector.xpath(
+            '/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/table/tr/td/div/text()').extract()
+        detail_table = handleTable(table_name, table_para)
+        goods_data['detail'] = detail_table
+
     # 图片
-    goods_data['pics'] = html.selector.xpath('//*[@id="proSmallImg"]').xpath('@src').extract()[0].replace('../','http://www.runlian365.com/')
+    try:
+        goods_data['pics'] = html.selector.xpath('//*[@id="proSmallImg"]').xpath('@src').extract()[0].replace('../','http://www.runlian365.com/')
+    except:
+        print 'Err happens getting pictures==!'
     goods_data['storage'] = ''
     goods_data['lack_period'] = ''
     goods_data['created'] = int(time.time())
     goods_data['updated'] = int(time.time())
 
     # print(goods_data['detail'])
+    endtime = time.time()
+    print 'done in %s', endtime - starttime
     return goods_data
 
 def parse(url):
@@ -160,8 +189,44 @@ def parse(url):
         url_list.append(url.replace('.html','-'+ str(x) + '.html'))
     return url_list
 
+def handle(pLabel):
+    """
+    # 处理p标签
+    :param pLabel: p标签中包含的内容
+    :return: 符合要求的p标签语句
+    """
+    label = '<p>产品介绍：</p>\n'
+    for s in pLabel:
+        label += '<p>' + s.encode('utf-8').replace('\n', '') + '</p>\n'
+    label = unicode(label, 'utf-8')
+    # 格式
+    font = '<style>.default p{padding:0;margin:0;font-family:微软雅黑;' \
+           'font-size:18px;' \
+           'line-height:28px;color:#333;' \
+           'width:780px;text-indent:-5rem;margin-left:6.2rem}</style>'
+    font = unicode(font, 'utf-8')
+    return label + font
+
+def handleTable(table_name,table_param):
+    '''
+    格式化table
+    :param table_name:参数名
+    :param table_param:参数
+    :return:table
+    '''
+
+    table = u'''<table border="1" cellpadding="0" cellspacing="0" width="100%"><tbody><tr><th colspan="2">产品参数</th></tr>'''
+
+    for i in xrange(len(table_name)):
+        line = u'''<tr><td class="name">{0}</td><td class="nr">{1}</td></tr>'''.format(table_name[i],table_param[i])
+        table += line
+
+    table += u'''</tbody></table>'''
+
+    return table
+
 if __name__ == '__main__':
     # url = 'http://www.runlian365.com/chanpin/xx-14.html'
-    url = 'http://www.runlian365.com/chanpin/xx-99.html'
+    url = 'http://www.runlian365.com/chanpin/xx-9031.html'
     goodsDetail(url)
 

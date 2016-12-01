@@ -55,6 +55,7 @@ def parseSeedUrl():
     sql = 'select * from {0} order by id limit 10'.format(table_name)
     table_outline.cursor.execute(sql)
     outline_data = table_outline.cursor.fetchall()
+    i = 0
     for data in outline_data:
         # 获取种子url
         seed_urls = goodsUrlList(data['url'])
@@ -76,6 +77,7 @@ def parseSeedUrl():
             seed_data['third_grade'] = data['third_grade']
             seed_data['created'] = int(time.time())
             seed_data['updated'] = int(time.time())
+            print seed_data['created']
             insert_data.append(seed_data)
         # 插入数据库
         table_seed.insertAll(insert_data)
@@ -183,4 +185,4 @@ def main(argv):
 
 if __name__ == '__main__':
     #main(sys.argv)
-    parseSeedUrl()
+    parseDetail()

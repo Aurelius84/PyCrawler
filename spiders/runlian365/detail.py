@@ -125,7 +125,7 @@ def goodsDetail(detail_url):
     goods_data['type'] = re.sub(ur'^.{3}','',html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[2]/span[1]/font[2]/text()').extract()[0],count = 1)
     # 详情
     detail_table = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/table').extract()
-    detail_p = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/p').extract()
+    detail_p = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/p/text()').extract()
     #goods_data['detail'] = html.selector.xpath('/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]').extract()[0]
     goods_data['detail'] = str(detail_table + detail_p).encode('utf-8')
     goods_data['detail'] = re.sub(ur'^<img.*>$','',goods_data['detail'])
@@ -161,7 +161,7 @@ def parse(url):
     return url_list
 
 if __name__ == '__main__':
-    # url = 'http://www.vipmro.com/product/587879'
+    # url = 'http://www.runlian365.com/chanpin/xx-14.html'
     url = 'http://www.runlian365.com/chanpin/xx-99.html'
     goodsDetail(url)
 

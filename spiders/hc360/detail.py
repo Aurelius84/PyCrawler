@@ -18,10 +18,11 @@ import time
 import re
 from StringIO import StringIO
 import gzip
+import zlib
 
 
 
-def goodsOutline(url):
+def goodsOutline():
     '''
     获取三级目录详情
     :param url:网站主页
@@ -69,19 +70,39 @@ def goodsUrlList(home_url):
     f = gzip.GzipFile(fileobj=buff)
     home_page = f.read().decode('gb18030').encode('utf8')
     html = HtmlResponse(url=home_url,body=home_page)
-    # 获取总页数
-    total_num = html.selector.xpath('//*[@id="search_filter_mod"]/div/span/text()').re(r'\/(\d+)')
-    if total_num:
-        for i in xrange(1,int(total_num[0])+1):
-            cur_home_url = home_url + "&ee={0}".format(i)
-            # 解析页面
-            print(cur_home_url)
-            buff = StringIO(getHtmlByVPN(cur_home_url))
-            f = gzip.GzipFile(fileobj=buff)
-            home_page = f.read().decode('gb18030').encode('utf8')
+    # 获取总数
+    total_num = html.selector.xpath('/html/body/div[3]/div[3]/span/em/text()').re(r'(\d+)')
+    if not total_num:
+        return False
+    # 合计总页数
+    total_num = int(total_num[0])
+    if total_num > 7000:
+        total_num = 7000
+    total_page = total_num/20
+    # 获取关键get参数
+    get_data = home_url.split('?')[1][:-1]
+    for i in xrange(int(total_page)):
+        cur_home_url = 'http://s.hc360.com/?{0}&af=2&afadprenum=0&afadval=0&afadbeg={1}'.format(get_data,20*i)
+        # 解析页面
+        print(cur_home_url)
+        # buff = StringIO(getHtmlByVPN(cur_home_url))
+        # f = gzip.GzipFile(fileobj=buff)
+        # home_page = f.read().decode('gb18030').encode('utf8')
+        d = zlib.decompressobj(16+zlib.MAX_WBITS)
+        try:
+            home_page = d.decompress(getHtmlByVPN(cur_home_url)).decode('gb18030').encode('utf8')
             html = HtmlResponse(url=cur_home_url,body=home_page)
-            cur_url_list = html.selector.xpath('/html/body/div[3]/div[6]/div[2]/div[2]/ul[1]/li/div[1]').re('http:\/\/b2b\.hc360\.com\/supplyself/\d+\.html')
-            url_list.extend(list(set(cur_url_list)))
+        except Exception,e:
+            print(Exception,e)
+            continue
+        cur_url_list = html.selector.xpath('/html/body/li/div[1]/div[2]').re('http:\/\/b2b\.hc360\.com\/supplyself/\d+\.html')
+        # /html/body/div[3]/div[5]/div[2]/div[2]/ul[1]/li[2]
+        # /html/body/div[3]/div[5]/div[2]/div[2]/ul[2]/li[2]
+        # /html/body/div[3]/div[5]/div[2]/div[2]/ul[2]/ul/li[1]
+        cur_url_list = list(set(cur_url_list))
+        url_list.extend(cur_url_list)
+        print(len(cur_url_list))
+
     #     print(len(urls))
     #     print(urls)
     #     exit()
@@ -163,6 +184,6 @@ def parse(url):
 
 if __name__ == '__main__':
     # url = 'http://b2b.hc360.com/supplyself/518255479.html'
-    url = 'http://s.hc360.com/cgi-bin/mmts?newurl=2&w=%B1%C3%B7%A7&mc=seller&h=DCE4297FABADA215'
-    print goodsUrlList(url)
+    # url = 'http://s.hc360.com/cgi-bin/mmts?newurl=2&w=%B1%C3%B7%A7&mc=seller&h=DCE4297FABADA215'
+    print goodsOutline()
 

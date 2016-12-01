@@ -107,8 +107,8 @@ class M(DB):
             # 插入数据
             retrun_n = DB.cursor(self).execute(sql, param)
             print 'insert', retrun_n
-        except:
-            raise Exception('Failed insert data.')
+        except Exception,e:
+            print(Exception,e)
         # 提交事务
         DB.commit(self)
 

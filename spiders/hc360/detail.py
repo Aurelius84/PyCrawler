@@ -11,13 +11,13 @@
 @time: 16/11/25 上午10:57
 """
 
-from myfunc import *
+from spiders.myfunc import *
 from scrapy.http import HtmlResponse
 from collections import defaultdict
 import time
 import re
-import io
-import chardet
+from StringIO import StringIO
+import gzip
 
 
 
@@ -30,8 +30,8 @@ def goodsOutline(url):
     # 存储各级分类信息
     outline_data = []
     # 解析页面
-    body = getHtml(url)
-    html = HtmlResponse(url=url,body=body)
+    # body = getHtml(url)
+    # html = HtmlResponse(url=url,body=body)
     # 一级类目名
     first_grade = u'工程机械/ 机械工业'
     # 二级目录名
@@ -40,15 +40,20 @@ def goodsOutline(url):
     third_grade_name = [u'泵阀',u'风机',u'压缩机',u'减速机']
     third_grade_url = ['http://s.hc360.com/?w=%B1%C3%B7%A7&mc=seller','http://s.hc360.com/?w=%B7%E7%BB%FA&mc=seller',
                        'http://s.hc360.com/?w=%D1%B9%CB%F5%BB%FA&mc=seller','http://s.hc360.com/?w=%BC%F5%CB%D9%BB%FA&mc=seller']
-    url_data = {}
-    for x in xrange (0,4):
-        url_data['url'] = third_grade_url[x]
-        url_data['third_grade'] = third_grade_name[x]
-        url_data['second_grade'] = second_grade
-        url_data['first_grade'] = first_grade
-        url_data['created'] = int(time.time())
-        url_data['updated'] = int(time.time())
-        outline_data.append(url_data)
+    for i in xrange(4):
+        # 获取三级目录home页下各个条件url
+        url_list = parse(third_grade_url[i])
+        for j in xrange(len(url_list)):
+            url_data = defaultdict()
+            url_data['url'] = url_list[j]
+            url_data['third_grade'] = third_grade_name[i]
+            url_data['second_grade'] = second_grade
+            url_data['first_grade'] = first_grade
+            url_data['created'] = int(time.time())
+            url_data['updated'] = int(time.time())
+            outline_data.append(url_data)
+        # print(outline_data)
+        # exit()
     return outline_data
 
 def goodsUrlList(home_url):
@@ -57,24 +62,26 @@ def goodsUrlList(home_url):
     :param home_url: http://www.vipmro.com/search/?&categoryId=501110
     :return:url列表
     '''
-    # 网站基址
-    base = u'http://www.runlian365.com'
-    # 所有条件下的列表
-    all_group_list = parse(home_url)
     # 保存所有goods的详情页url
     url_list = []
-    for url in all_group_list:
-        # url = 'http://www.vipmro.com/search/?ram=0.9551325197768372&categoryId=501110&attrValueIds=509805,509801,509806,509807'
-        # 解析html
-        home_page = getHtml(url)
-        html = HtmlResponse(url=url,body=str(home_page))
-        urls = html.selector.xpath('/html/body/div[5]/div/div[2]/div/div[1]/div/div/h4/a/@href').extract()
-        url_list.extend(urls)
-    for x in xrange(0,len(url_list)):
-        url_list[x] = base + url_list[x]
-        print str(x) + url_list[x] 
-
-
+    # 解析html
+    buff = StringIO(getHtmlByVPN(home_url))
+    f = gzip.GzipFile(fileobj=buff)
+    home_page = f.read().decode('gb18030').encode('utf8')
+    html = HtmlResponse(url=home_url,body=home_page)
+    # 获取总页数
+    total_num = html.selector.xpath('//*[@id="search_filter_mod"]/div/span/text()').re(r'\/(\d+)')
+    if total_num:
+        for i in xrange(1,int(total_num[0])+1):
+            cur_home_url = home_url + "&ee={0}".format(i)
+            # 解析页面
+            print(cur_home_url)
+            buff = StringIO(getHtmlByVPN(cur_home_url))
+            f = gzip.GzipFile(fileobj=buff)
+            home_page = f.read().decode('gb18030').encode('utf8')
+            html = HtmlResponse(url=cur_home_url,body=home_page)
+            cur_url_list = html.selector.xpath('/html/body/div[3]/div[6]/div[2]/div[2]/ul[1]/li/div[1]').re('http:\/\/b2b\.hc360\.com\/supplyself/\d+\.html')
+            url_list.extend(list(set(cur_url_list)))
     #     print(len(urls))
     #     print(urls)
     #     exit()
@@ -104,7 +111,6 @@ def goodsDetail(detail_url):
     goods_data['type'] = ''
     # 详情
     goods_data['detail'] = html.selector.xpath('//*[@id="pdetail"]/div[3]/table').extract()[0]
-    print goods_data['detail']
     # 图片
     pics = []
     for pic in html.selector.xpath('//*[@id="thumblist"]/li/div/a/img/@src').extract():
@@ -119,33 +125,44 @@ def goodsDetail(detail_url):
     goods_data['created'] = int(time.time())
     goods_data['updated'] = int(time.time())
 
-    # print(goods_data['detail'])
+    # print(goods_data)
     return goods_data
 
 def parse(url):
     '''
     解析url下页面各种选择项组合的url
-    :param url: http://www.vipmro.com/search/?&categoryId=501110
+    :param url: http://s.hc360.com/?w=%B1%C3%B7%A7&mc=seller
     :return:['http://www.vipmro.com/search/?categoryId=501110&attrValueIds=509801,512680,509807,509823']
     '''
+    # u'泵阀',u'风机',u'压缩机',u'减速机'
+    third_xpath = {'%B1%C3%B7%A7':
+                       ['//*[@id="list_layout_h2"]/div[2]/ul/li/a/@href'],# 材质
+                   '%B7%E7%BB%FA':
+                       ['//*[@id="list_layout_h6"]/div[2]/ul/li/a/@href'],# 气流方向
+                   '%D1%B9%CB%F5%BB%FA':
+                       ['//*[@id="list_layout_h1"]/div[2]/ul/li/a/@href'],# 类型
+                   '%BC%F5%CB%D9%BB%FA':
+                       ['//*[@id="list_layout_h1"]/div[2]/ul/li/a/@href']}# 品牌
+
+    for i in xrange(len(third_xpath.keys())):
+        pattern = third_xpath.keys()[i]
+        if re.search(re.compile(pattern),url):
+            break
+
     # 解析html
-    home_page = getHtml(url)
-    html = HtmlResponse(url=url,body=str(home_page))
+    buff = StringIO(getHtmlByVPN(url))
+    # gzip解压
+    f = gzip.GzipFile(fileobj=buff)
+    body = f.read().decode('gb18030').encode('utf8')
+
+    html = HtmlResponse(url=url,body=body,)
     # 考虑各种参数组合的三级分类地址
-    url_list = []
-    url_list.append(url)
-    page_total = html.selector.xpath('/html/body[@class="layout-1300"]/div[@class="s-layout"]' +
-                                     '/div[@class="s-mod-main"]/div[@class="cont-left"]/form' +
-                                     '/div[@class="s-mod-page"]/span[@class="total"]/text()').re(ur'\d*')
-    if page_total:
-        page = '&ee=' + str(page_total)
-    else:
-        page = '&ee=1'
+    url_list = html.selector.xpath(third_xpath[pattern][0]).extract()
 
     return url_list
 
 if __name__ == '__main__':
-    # url = 'http://www.vipmro.com/product/587879'
-    url = 'http://b2b.hc360.com/supplyself/518255479.html'
-    goodsDetail(url)
+    # url = 'http://b2b.hc360.com/supplyself/518255479.html'
+    url = 'http://s.hc360.com/cgi-bin/mmts?newurl=2&w=%B1%C3%B7%A7&mc=seller&h=DCE4297FABADA215'
+    print goodsUrlList(url)
 

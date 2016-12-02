@@ -94,7 +94,7 @@ def goodsDetail(detail_url):
     :return: 因为每个详情页面可能会产生多条数据，所以返回值是一个以dict为元素的list，其中每一个dict是一条数据
     '''
     # 解析网页
-    body = getHtmlByRequests(detail_url).encode('utf-8')
+    body = getHtml(detail_url).encode('utf-8')
     html = HtmlResponse(url=detail_url, body=str(body))
     goods_data = defaultdict()
     print '拿到数据，正在解析...'
@@ -111,7 +111,6 @@ def goodsDetail(detail_url):
     tmp_url = 'http://mro.abiz.com/' + html.selector.xpath('//*[@id="rightFrame"]/@src').extract()[0]
     tmp = getHtmlByRequests(tmp_url).encode('gbk', 'ignore')
     tmp = HtmlResponse(url=tmp_url, body=str(tmp))
-    detailInfo1 = tmp.selector.xpath('/html/body/div/table').extract()[0] # table
     table_name = tmp.xpath('/html/body/div/table/tbody/tr/td[1]/text()').extract()
     table_param = tmp.xpath('/html/body/div/table/tbody/tr/td[2]/text()').extract()
     detailInfo1 = handleTable(table_name, table_param)
@@ -202,8 +201,8 @@ if __name__ == '__main__':
 
     # 测试函数goodsDetail(detail_url)
 
-    # url = 'http://mro.abiz.com/product/AA1571.htm'
-    url = 'http://mro.abiz.com/product/AC1014.htm'
+    url = 'http://mro.abiz.com/product/AA1115.htm'
+    # url = 'http://mro.abiz.com/product/EA7867.htm'
     detail = goodsDetail(url)
     print detail['source_url']
     print detail['name']

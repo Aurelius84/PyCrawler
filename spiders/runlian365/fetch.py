@@ -96,16 +96,21 @@ def parseDetail():
     table_seed = M('spider',table_seed_name)
     table_gov = M('spider',table_gov_name)
     # 查询未入库种子
-    sql = "select a.id,a.url from {0} a where a.url not in (select source_url from {1} order by id)  order by id".format(table_seed_name,table_gov_name)
+    sql = "select a.id,a.url,a.first_grade,a.second_grade,a.third_grade from {0} a where a.url not in (select source_url from {1} order by id)  order by id".format(table_seed_name,table_gov_name)
     table_seed.cursor.execute(sql)
     seed_urls = table_seed.cursor.fetchall()
-    # 抓取详情
-    insert_data = []
-    for seed in seed_urls:
-        detail = goodsDetail(seed['url'])
-        insert_data.append(detail)
-    # 插入数据库
-    table_gov.insertAll(insert_data)
+    while seed_urls:
+        for seed in seed_urls:
+            detail = goodsDetail(seed['url'])
+            detail['first_grade'] = seed['first_grade']
+            detail['second_grade'] = seed['second_grade']
+            detail['third_grade'] = seed['third_grade']
+            # 插入数据库
+            table_gov.insertOne(detail)
+        # 提交事务
+        table_seed.commit()
+        table_seed.cursor.execute(sql)
+        seed_urls = table_seed.cursor.fetchall()
     # 关闭数据库连接
     table_seed.close()
     table_gov.close()

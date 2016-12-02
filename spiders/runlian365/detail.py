@@ -127,17 +127,20 @@ def goodsDetail(detail_url):
     try:
         goods_data['name'] = html.xpath('/html/body/div[4]/div[2]/div/h1/a/text()').extract()[0]
     except:
+        goods_data['name'] = ''
         print 'err in getting name '
     # 价格(为毛啊1.sub函数第二个参数设置为空输出就没了2.对价格做个lstrip()输出又没了)
     try:
-        goods_data['price'] = html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[1]/b/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0]
+        goods_data['price'] = float(html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[1]/b/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')[0])
     except:
+        goods_data['price'] = float(0)
         print 'err in getting price'
     #print goods_data['price']
     # 型号
     try:
         goods_data['type'] = re.sub(ur'^.{3}','',html.selector.xpath('/html/body/div[4]/div[2]/div/div[1]/div[2]/div[1]/p[2]/span[1]/font[2]/text()').extract()[0],count = 1)
     except:
+        goods_data['type'] = ''
         print 'err in getting type'
     # 详情
     try:
@@ -152,12 +155,14 @@ def goodsDetail(detail_url):
         detail_table = handleTable(table_name, table_para)
         goods_data['detail'] = detail_table + detail_p
     except:
+        goods_data['detail'] = ''
         print 'err in getting detail'
 
     # 图片
     try:
         goods_data['pics'] = html.selector.xpath('//*[@id="proSmallImg"]').xpath('@src').extract()[0].replace('../','http://www.runlian365.com/')
     except:
+        goods_data['pics'] = ''
         print 'Err happens getting pictures==!'
     goods_data['storage'] = ''
     goods_data['lack_period'] = ''
@@ -166,7 +171,7 @@ def goodsDetail(detail_url):
 
     # print(goods_data['detail'])
     endtime = time.time()
-    print 'done in %s', endtime - starttime
+    print 'done in '+ str(endtime - starttime )+ 's'
     return goods_data
 
 def parse(url):
@@ -222,7 +227,7 @@ def handleTable(table_name,table_param):
         line = u'''<tr><td class="name">{0}</td><td class="nr">{1}</td></tr>'''.format(table_name[i],table_param[i])
         table += line
 
-    table += u'''</tbody></table>'''
+    table += u'''</tbody></table><style>.default td{padding:2px 8px;border-right:1px solid #D8D8D8;border-bottom:1px solid #D8D8D8;}.default table{border-left:1px solid #D8D8D8;border-top:1px solid #D8D8D8;margin:10px 0}.default th{border-bottom:1px solid #D8D8D8;border-right:1px solid #D8D8D8;}.name{width:50%}</style>'''
 
     return table
 

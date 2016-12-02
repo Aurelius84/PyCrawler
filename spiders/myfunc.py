@@ -140,7 +140,7 @@ def handleTable(table_name,table_param):
         line = u'''<tr><td class="name">{0}</td><td class="nr">{1}</td></tr>'''.format(table_name[i],table_param[i])
         table += line
 
-    table += u'''</tbody></table>'''
+    table += u'''</tbody></table><style>.default td{padding:2px 8px;border-right:1px solid #D8D8D8;border-bottom:1px solid #D8D8D8;}.default table{border-left:1px solid #D8D8D8;border-top:1px solid #D8D8D8;margin:10px 0}.default th{border-bottom:1px solid #D8D8D8;border-right:1px solid #D8D8D8;}.name{width:50%}</style>'''
 
     return table
 

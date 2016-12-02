@@ -26,10 +26,10 @@ def parseOutline():
     解析类目函数入口
     :return: True or False
     '''
-    url = 'http://mro.abiz.com'
+    url = 'http://www.deppre.cn/'
     try:
         # 实例化 表
-        table_outline = M('abiz', 'abiz_outline')
+        table_outline = M('deppre', 'deppre_outline')
     except Exception, e:
         print(Exception, ":", e)
         return False
@@ -51,10 +51,10 @@ def parseSeedUrl():
     :return:
     '''
     # 实例化 outline表
-    table_name = 'abiz_outline'
-    table_seed_name = 'abiz_url'
-    table_outline = M('abiz',table_name)
-    table_seed = M('abiz',table_seed_name)
+    table_name = 'deppre_outline'
+    table_seed_name = 'deppre_url'
+    table_outline = M('deppre',table_name)
+    table_seed = M('deppre',table_seed_name)
     # 查询所有url
     sql = 'select * from {0} order by id'.format(table_name)
     table_outline.cursor.execute(sql)
@@ -92,10 +92,10 @@ def parseDetail():
     解析详情函数入口
     :return:
     '''
-    table_seed_name = 'abiz_url'
-    table_gov_name = 'abiz_gov'
-    table_seed = M('abiz',table_seed_name)
-    table_gov = M('abiz',table_gov_name)
+    table_seed_name = 'deppre_url'
+    table_gov_name = 'deppre_gov'
+    table_seed = M('deppre',table_seed_name)
+    table_gov = M('deppre',table_gov_name)
     # 查询未入库种子
     sql = "select a.id,a.url from {0} a where a.url not in (select source_url from {1} order by id)  order by id".format(table_seed_name,table_gov_name)
     table_seed.cursor.execute(sql)
@@ -122,8 +122,8 @@ def parseDetail():
     table_gov.close()
 
 def etl():
-    site = 'abiz'
-    db_name = 'abiz'
+    site = 'deppre'
+    db_name = 'deppre'
     # gov表
     gov_name = site + '_gov'
     table_gov = M(db_name,gov_name)
@@ -202,6 +202,6 @@ if __name__ == '__main__':
     # main(sys.argv)
     # etl()
     # parseOutline()  # 抓取三级目录首页链接
-    # parseSeedUrl()    # 抓取所有产品链接
-    parseDetail()   # 抓取所有产品详情
+    parseSeedUrl()    # 抓取所有产品链接
+    # parseDetail()   # 抓取所有产品详情
 

@@ -22,6 +22,7 @@ import itertools
 import time
 import re
 import requests
+import math
 
 def goodsOutline(url):
     '''
@@ -65,7 +66,7 @@ def goodsOutline(url):
 def goodsUrlList(home_url):
     '''
     根据三级目录商品首页获取所有详情页url
-    :param home_url: http://www.sssmro.com//category.php?id=1137&price_min=&price_max=
+    :param home_url:
     :return:url列表
     '''
     # 该网站不用加条件遍历所有情况就能拿到所有产品的url
@@ -75,10 +76,21 @@ def goodsUrlList(home_url):
     url_list = []
     # 拿到该三级目录下一共有多少种产品
     num = int(html.xpath('//*[@id="pinpai"]/a[1]/text()').extract()[0][3:-1])
-    for i in range(1, num + 1):
-        if not html.xpath('/html/body/div[5]/form[1]/ul/li['+str(i)+']/p[2]/span[1]/text()').extract()[0] == '询价':
-            url_list.append('http://www.deppre.cn/' + html.xpath('/html/body/div[5]/form[1]/ul/li['+str(i)+']/a/@href').extract()[0])
-            print('http://www.deppre.cn/' + html.xpath('/html/body/div[5]/form[1]/ul/li['+str(i)+']/a/@href').extract()[0])
+    # 40个产品一页
+    page_num = int(math.ceil(num / 40))
+    page_url = []
+    page_url.append(home_url)
+    for i in range(0, page_num):
+        for j in range(1, 40 + 1):
+            try:
+                if not html.xpath('/html/body/div[5]/form[1]/ul/li['+str(j)+']/p[2]/span[1]/text()').extract()[0] == '询价':
+                    url_list.append('http://www.deppre.cn/' + html.xpath('/html/body/div[5]/form[1]/ul/li['+str(j)+']/a/@href').extract()[0])
+                    print('http://www.deppre.cn/' + html.xpath('/html/body/div[5]/form[1]/ul/li['+str(j)+']/a/@href').extract()[0])
+            except:
+                break
+        page_url.append(home_url[:-5] + '-min0-max0-attr0-' + str(i+1) + '-goods_id-DESC.html')
+        body = getHtml(page_url[i+1])
+        html = HtmlResponse(url=page_url[i+1], body=str(body))
     print len(url_list)
     return url_list
 
@@ -99,13 +111,8 @@ def goodsDetail(detail_url):
     price_list = html.xpath('//*[@id="ECS_FORMBUY"]/div[1]/table/tr/td/span/text()').extract()
     # 型号和货期一块儿拿到
     # 详情，本网站下的商品只有p标签没有table
-    # print html.xpath('//*[@id="cc1"]/div/div[2]/p[1]/span[2]/text()').extract()[0]
-    # print html.xpath('//*[@id="cc1"]/div/div[2]/p[1]/span[2]/a/strong/text()').extract()[0]
     detailInfo = html.xpath('//*[@id="cc1"]/div/div[2]/p/span/text()').extract()[1:]
-    # print '呵呵'.find('：')
     detailInfo = handle(detailInfo)   # 将p标签里的内容封装成符合格式的p标签
-    print detailInfo
-    exit()
     # 图片，本网站下的商品都只有一张图片
     pic = 'http://www.deppre.cn/' + html.xpath('//*[@id="pic_Img"]/@src').extract()[0]
     goodslist = []
@@ -127,22 +134,16 @@ def goodsDetail(detail_url):
         goodslist[i]['third_grade'] = ''
     return goodslist
 
+
 def handle(pLabel):
     """
     # 处理p标签
     :param pLabel: p标签中包含的内容
     :return: 符合要求的p标签语句
     """
-    for s in pLabel:
-        print s
     label = '<p>产品介绍：</p>\n'
-    for i in range(len(pLabel)):
-        if pLabel[i].encode('utf-8').find('：') == -1:
-            label += '<p>' + pLabel[i].encode('utf-8').replace('\n', '') + '</p>\n'
-        elif not (pLabel[i-1].encode('utf-8').find('：') == -1):
-            label += '<p>' + pLabel[i].encode('utf-8').replace('\n', '') + ','
-        else:
-            label += pLabel[i].encode('utf-8').replace('\n', '') + ','
+    for s in pLabel:
+        label += '<p>' + s.encode('utf-8').replace('\n', '') + '</p>\n'
     label = unicode(label, 'utf-8')
     # 格式
     font = '<style>.default p{padding:0;margin:0;font-family:微软雅黑;' \
@@ -153,21 +154,13 @@ def handle(pLabel):
     return label + font
 
 
-
 if __name__ == '__main__':
 
     # 测试函数goodsDetail(detail_url)
 
     url = 'http://www.deppre.cn/goods-750.html'
     detail = goodsDetail(url)
-    # print detail['source_url']
-    # print detail['name']
-    # print detail['price']
-    # print detail['type']
-    # print detail['detail']
-    # print detail['pics']
-    # print detail['storage']
-    # print detail['lack_period']
+    print detail
 
     # 测试goodsOutline()
     # url = 'http://www.deppre.cn/'

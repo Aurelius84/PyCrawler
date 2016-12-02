@@ -26,7 +26,7 @@ def parseOutline():
     url = 'http://www.runlian365.com/'
     try:
         # 实例化 表
-        table_outline = M('spider','runlian365_outline')
+        table_outline = M('runlian365','runlian365_outline')
     except Exception,e:
         print(Exception,":",e)
         return False

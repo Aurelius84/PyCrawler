@@ -144,14 +144,15 @@ def goodsDetail(detail_url):
         detail_p = html.selector.xpath(
             '/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]//p/text()').extract()
         detail_p = handle(detail_p)
-        goods_data['detail'] = detail_p
-    except:
+        #goods_data['detail'] = detail_p
         table_name = html.selector.xpath(
             '/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/table/tr/td/text()').extract()
         table_para = html.selector.xpath(
             '/html/body/div[4]/div[2]/div/div[2]/div[2]/div/div[1]/div/div/div[1]/table/tr/td/div/text()').extract()
         detail_table = handleTable(table_name, table_para)
-        goods_data['detail'] = detail_table
+        goods_data['detail'] = detail_table + detail_p
+    except:
+        print 'err in getting detail'
 
     # 图片
     try:

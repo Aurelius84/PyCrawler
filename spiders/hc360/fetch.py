@@ -107,6 +107,7 @@ def parseDetail():
             detail['third_grade'] = seed['third_grade']
             # 插入数据库
             table_gov.insertOne(detail)
+        table_seed.commit()
         seed_urls = []
         table_seed.cursor.execute(sql)
         seed_urls = table_seed.cursor.fetchall()

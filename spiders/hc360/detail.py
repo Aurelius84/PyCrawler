@@ -117,54 +117,65 @@ def goodsDetail(detail_url):
     :return: 各个字段信息 dict
     '''
     goods_data = defaultdict()
-    # 详情页链接
-    goods_data['source_url'] = detail_url
-    # 解析html body必须是str类型
-    body = getHtml(detail_url).decode('gb18030').encode('utf-8')
-    html = HtmlResponse(url=detail_url, body=str(body),encoding='utf-8')
-    # 名称
-    goods_data['name'] = html.xpath('//*[@id="comTitle"]/text()').extract()[0]
-    # 价格
-    goods_data['price'] = 0
-    price = html.selector.xpath('//*[@id="oriPriceTop"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')
-    if price:
-        goods_data['price'] = price[0]
-    # 型号 从参数里获取
-    param_name = html.selector.xpath('//*[@id="pdetail"]/div[3]/table/tr/th/h4/text()').extract()
-    param_value = html.selector.xpath('//*[@id="pdetail"]/div[3]/table/tr/td/text()').extract()
-    goods_data['type'] = ''
-    if u'型号：' in param_name:
-        goods_data['type'] = param_value[param_name.index(u'型号：')].strip()
-    # 图片
-    pics = []
-    for pic in html.selector.xpath('//*[@id="thumblist"]/li/div/a/img/@src').extract():
-        pics.append(pic.replace('100x100', '300x300'))
-    goods_data['pics'] = ('|').join(pics)
-    # 商品id
-    product_id = re.search(r'\/(\d+)\.html',detail_url).group(1)
-    # 详情url
-    js_url = 'http://detail.b2b.hc360.com/detail/turbine/action/ajax.XssFilteringServicesAjaxAction?bcid={0}'.format(product_id)
-    detail_text = ''
     try:
-        detail_body = getHtmlByVPN(js_url).decode('gb18030').encode('utf8')
-        detail_html = HtmlResponse(url=js_url,body=json.loads(detail_body[1:-1])['html'],encoding='utf8')
-        detail_text = ''.join(detail_html.selector.xpath('//span/text()').extract())
+        # 详情页链接
+        goods_data['source_url'] = detail_url
+        # 解析html
+        d = zlib.decompressobj(16+zlib.MAX_WBITS)
+        home_page = d.decompress(getHtmlByVPN(detail_url)).decode('gb18030').encode('utf8')
+        html = HtmlResponse(url=detail_url,body=home_page,encoding='utf8')
+        # 名称
+        name = html.xpath('//*[@id="comTitle"]/text()').extract()
+        if name:
+            goods_data['name'] = name[0]
+        # 价格
+        goods_data['price'] = 0
+        price = html.selector.xpath('//*[@id="oriPriceTop"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')
+        if price:
+            goods_data['price'] = price[0]
+        # 型号 从参数里获取
+        param_name = html.selector.xpath('//*[@id="pdetail"]/div[3]/table/tr/th/h4/text()').extract()
+        param_value = html.selector.xpath('//*[@id="pdetail"]/div[3]/table/tr/td/text()').extract()
+        goods_data['type'] = ''
+        if u'型号：' in param_name:
+            goods_data['type'] = param_value[param_name.index(u'型号：')].strip()
+        # 图片
+        pics = []
+        for pic in html.selector.xpath('//*[@id="thumblist"]/li/div/a/img/@src').extract():
+            pics.append(pic.replace('100x100', '300x300'))
+        goods_data['pics'] = ('|').join(pics)
+        # 商品id
+        product_id = re.search(r'\/(\d+)\.html',detail_url).group(1)
+        # 详情url
+        js_url = 'http://detail.b2b.hc360.com/detail/turbine/action/ajax.XssFilteringServicesAjaxAction?bcid={0}'.format(product_id)
+        detail_text = ''
+        try:
+            detail_body = getHtmlByVPN(js_url).decode('gb18030').encode('utf8')
+            detail_html = HtmlResponse(url=js_url,body=json.loads(detail_body[1:-1])['html'],encoding='utf8')
+            detail_text = ''.join(detail_html.selector.xpath('//span/text()').extract())
+            # if detail_text == '':
+            #     detail_text = ''.join(detail_html.selector.xpath('//text()').extract())
+        except Exception,e:
+            print(Exception,e)
+        # 详情
+        goods_data['detail'] = ''
+        detail = html.selector.xpath('//*[@id="pdetail"]/div[3]/table').extract()
+        if detail:
+            goods_data['detail'] = re.sub(u'\r|\n|\t| ',u'',detail[0])
+        if detail_text != '':
+            style = u'<style>.default p{padding:0;margin:0;font-family:微软雅黑;font-size:18px;line-height:28px;color:#333;width:780px;text-indent:-5rem;margin-left:6.2rem}</style>'
+            goods_data['detail'] += u'<p>产品介绍: </p><p>{0}</p>{1}'.format(detail_text,style)
+        # print(json.loads(detail_body[1:-1])['html'])
+        goods_data['storage'] = ''
+        storage = html.selector.xpath('//*[@id="supplyInfoNum"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')
+        if storage:
+            goods_data['storage'] = storage[0]
+        #供货时间
+        goods_data['lack_period'] = ''
+        goods_data['created'] = int(time.time())
+        goods_data['updated'] = int(time.time())
     except Exception,e:
         print(Exception,e)
-    # 详情
-    goods_data['detail'] = ''
-    if detail_text != '':
-        style = u'<style>.default p{padding:0;margin:0;font-family:微软雅黑;font-size:18px;line-height:28px;color:#333;width:780px;text-indent:-5rem;margin-left:6.2rem}</style>'
-        goods_data['detail'] = u'<p>产品介绍: </p><p>{0}</p>{1}'.format(detail_text,style)
-    # print(json.loads(detail_body[1:-1])['html'])
-    goods_data['storage'] = ''
-    storage = html.selector.xpath('//*[@id="supplyInfoNum"]/text()').re(ur'[1-9]\d*\.?\d*|0\.\d*[1-9]\d*')
-    if storage:
-        goods_data['storage'] = storage[0]
-    #供货时间
-    goods_data['lack_period'] = ''
-    goods_data['created'] = int(time.time())
-    goods_data['updated'] = int(time.time())
     return goods_data
 
 def parse(url):
@@ -202,6 +213,6 @@ def parse(url):
 
 if __name__ == '__main__':
     # url = 'http://b2b.hc360.com/supplyself/518255479.html'
-    url = 'http://b2b.hc360.com/supplyself/586321734.html'
+    url = 'http://b2b.hc360.com/supplyself/80487336376.html'
     print goodsDetail(url)
 

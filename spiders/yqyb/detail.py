@@ -25,37 +25,34 @@ def goodsOutline(url):
     :return:[{'url':'','first_grade':'',...},...{}]
     '''
     # 存储各级分类信息
+    # //*[@id="mod-catpanel-id"]/li[8]/div/div/div[1]/div/div[1]/div[2]/a[1]
+    # //*[@id="mod-catpanel-id"]/li[8]/div/div/div[1]/div/div[2]/div[2]/a[1]
     outline_data = []
     # 解析页面
-    body = getHtmlFromJs(url)['content'].encode('utf-8')
+    body = getHtml(url)
     html = HtmlResponse(url=url,body=body)
     # 一级类目名
-    first_grade = html.selector.xpath('/html/body/div[3]/div/ul/li[1]/div/div[1]/ul/li/a/text()').extract()
-    # 去掉后两个
-    for i in xrange(len(first_grade)-2):
-        # 二级类目名
-        #/html/body/div[3]/div/ul/li[1]/div/div[2]/div[1]/div[1]
-        #/html/body/div[3]/div/ul/li[1]/div/div[2]/div[3]/div[1]
-        second_grade = html.selector.xpath('/html/body/div[3]/div/ul/li[1]/div/div[2]/div[{0}]/div/span/a/text()'.format(i+1)).extract()
-        print('second: {0}'.format(len(second_grade)))
-        for j in xrange(len(second_grade)):
-            # 三级类目名和链接url
-            # /html/body/div[3]/div/ul/li[1]/div/div[2]/div[1]/div[1]/ul/li[1]/a
-            # /html/body/div[3]/div/ul/li[1]/div/div[2]/div[1]/div[2]/ul/li[1]/a
-            third_grade_name = html.selector.xpath('/html/body/div[3]/div/ul/li[1]/div/div[2]/div[{0}]/div[{1}]/ul/li/a/text()'.format(i+1,j+1)).extract()
-            third_grade_url = html.selector.xpath('/html/body/div[3]/div/ul/li[1]/div/div[2]/div[{0}]/div[{1}]/ul/li/a/@href'.format(i+1,j+1)).extract()
-            print(len(third_grade_name))
-            for k in xrange(len(third_grade_name)):
-                # 格式化数据
-                url_data = defaultdict()
-                url_data['url'] = third_grade_url[k]
-                url_data['third_grade'] = third_grade_name[k]
-                url_data['second_grade'] = second_grade[j]
-                url_data['first_grade'] = first_grade[i]
-                url_data['created'] = int(time.time())
-                url_data['updated'] = int(time.time())
-                # 保存
-                outline_data.append(url_data)
+    first_grade = '电工测量仪器'
+    # 二级类目名
+    second_grade = '电工测量仪器'
+    # 列表页id
+    urls = html.selector.xpath('//*[@id="mod-catpanel-id"]/li[8]/div/div/div[1]/div/div[1]/div[2]/a/@href').re('\-\-(\d+)')
+    # 三级目录名
+    third_grades = html.selector.xpath('//*[@id="mod-catpanel-id"]/li[8]/div/div/div[1]/div/div[1]/div[2]/a/text()').extract()
+    # 分开抓
+    urls.extend(html.selector.xpath('//*[@id="mod-catpanel-id"]/li[8]/div/div/div[1]/div/div[2]/div[2]/a[1]/@href').re('\-\-(\d+)'))
+    third_grades.extend(html.selector.xpath('//*[@id="mod-catpanel-id"]/li[8]/div/div/div[1]/div/div[2]/div[2]/a[1]/text()').extract())
+    for i in xrange(len(urls)):
+        # 格式化数据
+        url_data = defaultdict()
+        url_data['url'] = 'https://s.1688.com/selloffer/offer_search.htm?priceStart=0.01&uniqfield=pic_tag_id&n=y&filt=y#sm-filtbar&categoryId={0}'.format(urls[i])
+        url_data['third_grade'] = third_grades[i]
+        url_data['second_grade'] = second_grade
+        url_data['first_grade'] = first_grade
+        url_data['created'] = int(time.time())
+        url_data['updated'] = int(time.time())
+        # 保存
+        outline_data.append(url_data)
     return outline_data
 
 
@@ -65,20 +62,12 @@ def goodsUrlList(home_url):
     :param home_url: http://www.vipmro.com/search/?&categoryId=501110
     :return:url列表
     '''
-    # 所有条件下的列表
-    all_group_list = parseOptional(home_url)
-    # 保存所有goods的详情页url
-    url_list = []
-    for url in all_group_list:
-        # url = 'http://www.vipmro.com/search/?ram=0.9551325197768372&categoryId=501110&attrValueIds=509805,509801,509806,509807'
-        # 解析html
-        home_page = getHtmlFromJs(url)['content'].encode('utf-8')
-        html = HtmlResponse(url=url,body=str(home_page))
-        urls = html.selector.xpath('/html/body/div[7]/div[1]/ul/li/div[2]/a/@href').extract()
-        if not urls:
-            continue
-        url_list.extend(urls)
-    return url_list
+    # 解析html
+    home_page = getHtml(url)
+    html = HtmlResponse(url=url,body=str(home_page))
+    urls = html.selector.xpath('//*[@id="sm-maindata"]/div/ul/li/div[2]/div[3]/a/@href').re('https:\/\/detail\.1688\.com\/offer\/\d+\.html')
+
+    return urls
 
 def goodsDetail(detail_url):
     '''
@@ -152,6 +141,6 @@ def parseOptional(url):
 
 if __name__ == '__main__':
     # url = 'http://www.vipmro.com/product/587879'
-    # url = 'http://www.vipmro.com/search/?&categoryId=501110'
-    url = 'https://detail.1688.com/offer/520658508585.html?tracelog=p4p'
-    print goodsDetail(url)
+    url = 'https://s.1688.com/selloffer/offer_search.htm?priceStart=0.1&uniqfield=pic_tag_id&categoryId=1033834&n=y&filt=y#sm-filtbar'
+    # url = 'https://detail.1688.com/offer/520658508585.html?tracelog=p4p'
+    print goodsUrlList(url)

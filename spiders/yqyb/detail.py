@@ -17,6 +17,7 @@ from collections import defaultdict
 import itertools
 import time
 import json
+import re
 
 def goodsOutline(url):
     '''
@@ -62,11 +63,16 @@ def goodsUrlList(home_url):
     :param home_url: http://www.vipmro.com/search/?&categoryId=501110
     :return:url列表
     '''
+    # 转换为接口地址
+    url_id = re.search('Id=(\d+)',home_url).group(0)
+    pre_url = 'https://s.1688.com/selloffer/rpc_async_render.jsonp?categoryId={0}&n=y&filt=y&priceStart=0.1&qrwRedirectEnabled=false&uniqfield=pic_tag_id&templateConfigName=marketOfferresult&offset=8&pageSize=60&asyncCount=60&startIndex=0&pageOffset=2&async=true&enableAsync=true&rpcflag=new&_pageName_=market&beginPage='.format(url_id)
     # 解析html
-    home_page = getHtml(url)
-    html = HtmlResponse(url=url,body=str(home_page))
-    urls = html.selector.xpath('//*[@id="sm-maindata"]/div/ul/li/div[2]/div[3]/a/@href').re('https:\/\/detail\.1688\.com\/offer\/\d+\.html')
-
+    for page in xrange(100):
+        home_page = getHtml(pre_url+str(page)).decode('gbk').encode('utf8')
+        print home_page
+        goods_ids = re.findall(u"(\d+)",home_page)
+        print(goods_ids)
+        exit()
     return urls
 
 def goodsDetail(detail_url):

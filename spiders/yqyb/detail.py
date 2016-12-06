@@ -64,16 +64,23 @@ def goodsUrlList(home_url):
     :return:url列表
     '''
     # 转换为接口地址
-    url_id = re.search('Id=(\d+)',home_url).group(0)
+    url_id = re.search('Id=(\d+)',home_url).group(1)
     pre_url = 'https://s.1688.com/selloffer/rpc_async_render.jsonp?categoryId={0}&n=y&filt=y&priceStart=0.1&qrwRedirectEnabled=false&uniqfield=pic_tag_id&templateConfigName=marketOfferresult&offset=8&pageSize=60&asyncCount=60&startIndex=0&pageOffset=2&async=true&enableAsync=true&rpcflag=new&_pageName_=market&beginPage='.format(url_id)
     # 解析html
+    import zlib
     for page in xrange(100):
-        home_page = getHtml(pre_url+str(page)).decode('gbk').encode('utf8')
-        print home_page
-        goods_ids = re.findall(u"(\d+)",home_page)
-        print(goods_ids)
-        exit()
-    return urls
+        # 解析html
+        try:
+            d = zlib.decompressobj(16+zlib.MAX_WBITS)
+            home_page = d.decompress(getHtmlByVPN(pre_url+str(page),http_type='https')).decode('gbk')
+            # 解析html
+            print home_page[-1000:]
+        except Exception,e:
+            print(Exception,e)
+        # goods_ids = re.findall(u"(\d+)",home_page)
+        # print(goods_ids)
+        # exit()
+    # return urls
 
 def goodsDetail(detail_url):
     '''
@@ -147,6 +154,6 @@ def parseOptional(url):
 
 if __name__ == '__main__':
     # url = 'http://www.vipmro.com/product/587879'
-    url = 'https://s.1688.com/selloffer/offer_search.htm?priceStart=0.1&uniqfield=pic_tag_id&categoryId=1033834&n=y&filt=y#sm-filtbar'
+    url = 'https://s.1688.com/selloffer/offer_search.htm?priceStart=0.1&uniqfield=pic_tag_id&categoryId=1033835&n=y&filt=y#sm-filtbar'
     # url = 'https://detail.1688.com/offer/520658508585.html?tracelog=p4p'
     print goodsUrlList(url)

@@ -20,6 +20,8 @@ import random
 from scrapy.http import HtmlResponse
 import httplib
 import socket
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 httplib.HTTPConnection._http_vsn = 10
 httplib.HTTPConnection._http_vsn_str = 'HTTP/1.0'
 
@@ -89,7 +91,7 @@ def getHtmlFromJs(url):
           )
     return fetcher.phantomjs_fetch(url)
 
-def getHtmlByVPN(url,headers=''):
+def getHtmlByVPN(url,headers='',http_type='http'):
     '''
     蚂蚁代理获取页面
     :param url:
@@ -114,7 +116,7 @@ def getHtmlByVPN(url,headers=''):
     keys = paramMap.keys()
     authHeader = "MYH-AUTH-MD5 " + str('&').join('%s=%s' % (key, paramMap[key]) for key in keys)
     #接下来使用蚂蚁动态代理进行访问
-    proxy_handler = urllib2.ProxyHandler({"http" : '123.56.92.151:8123'})
+    proxy_handler = urllib2.ProxyHandler({http_type : '123.56.92.151:8123'})
     opener = urllib2.build_opener(proxy_handler)
     # 伪装浏览器
     if headers:

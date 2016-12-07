@@ -10,7 +10,9 @@
 @file: detail.py
 @time: 16/11/25 上午10:57
 """
-
+# import sys
+# sys.path.append('..')
+# from myfunc import *
 from spiders.myfunc import *
 from scrapy.http import HtmlResponse
 from collections import defaultdict
@@ -30,7 +32,7 @@ def goodsOutline(url):
     # //*[@id="mod-catpanel-id"]/li[8]/div/div/div[1]/div/div[2]/div[2]/a[1]
     outline_data = []
     # 解析页面
-    body = getHtml(url)
+    body = getHtmlByVPN(url)
     html = HtmlResponse(url=url,body=body)
     # 一级类目名
     first_grade = '电工测量仪器'
@@ -63,24 +65,42 @@ def goodsUrlList(home_url):
     :param home_url: http://www.vipmro.com/search/?&categoryId=501110
     :return:url列表
     '''
+    urls = []
     # 转换为接口地址
     url_id = re.search('Id=(\d+)',home_url).group(1)
     pre_url = 'https://s.1688.com/selloffer/rpc_async_render.jsonp?categoryId={0}&n=y&filt=y&priceStart=0.1&qrwRedirectEnabled=false&uniqfield=pic_tag_id&templateConfigName=marketOfferresult&offset=8&pageSize=60&asyncCount=60&startIndex=0&pageOffset=2&async=true&enableAsync=true&rpcflag=new&_pageName_=market&beginPage='.format(url_id)
     # 解析html
     import zlib
-    for page in xrange(100):
+    for page in xrange(101):
         # 解析html
         try:
             d = zlib.decompressobj(16+zlib.MAX_WBITS)
             home_page = d.decompress(getHtmlByVPN(pre_url+str(page),http_type='https')).decode('gbk')
             # 解析html
-            print home_page[-1000:]
+            # print home_page
         except Exception,e:
             print(Exception,e)
-        # goods_ids = re.findall(u"(\d+)",home_page)
-        # print(goods_ids)
-        # exit()
-    # return urls
+        goods_id = re.findall(u'\d{11,15}', home_page)  # 拿到疑似ID的ID
+        goods_id = list(set(goods_id))  # 去重
+        print len(goods_id)
+        num = 0
+        for id in goods_id:
+            # 开头为1和2的不是产品ID
+            if id[0] == '2' or id[0] == '1':
+                continue
+            if 'https://detail.1688.com/offer/'+ id + '.html' not in urls:
+                urls.append('https://detail.1688.com/offer/'+ id + '.html')
+                num += 1
+                # try:
+                #     goodsDetail('https://detail.1688.com/offer/'+ id + '.html')
+                #     # print 'https://detail.1688.com/offer/'+ id + '.html'
+                # except Exception, e:
+                #     print(Exception, e)
+                #     print 'https://detail.1688.com/offer/' + id + '.html'
+        print '+ %d' % num
+        print '当前抓到了%d个链接' % len(urls)
+    print len(urls)
+    return urls
 
 def goodsDetail(detail_url):
     '''
@@ -92,13 +112,16 @@ def goodsDetail(detail_url):
     # 详情页链接
     goods_data['source_url'] = detail_url
     # 解析html body必须是str类型
-    body = getHtml(detail_url).decode('gbk').encode('utf8')
+    body = getHtmlByVPN(detail_url).decode('gbk').encode('utf8')
     # print(body)
     html = HtmlResponse(url=detail_url,body=body,encoding='utf8')
     # 名称
     goods_data['name'] = html.xpath('//*[@id="mod-detail-title"]/h1/text()').extract()[0]
     # 价格
-    goods_data['price'] = html.selector.xpath('//*[@id="mod-detail-price"]/div/table/tr[1]/td[2]/div/span[2]/text()').extract()[0]
+    try:
+        goods_data['price'] = html.xpath('//*[@id="mod-detail-price"]/div/table/tr[1]/td[2]/div/span[2]/text()').extract()[0]
+    except:
+        goods_data['price'] = html.xpath('//*[@id="mod-detail-price"]/div/table/tr[1]/td[2]/span[2]/text()').extract()[0]
     # 参数名
     names = html.selector.xpath('//*[@id="mod-detail-attributes"]/div[1]/table/tbody/tr/td[contains(@class,"de-feature")]/text()').extract()
     params = html.selector.xpath('//*[@id="mod-detail-attributes"]/div[1]/table/tbody/tr/td[contains(@class,"de-value")]/text()').extract()
@@ -108,7 +131,7 @@ def goodsDetail(detail_url):
     # 型号
     goods_data['type'] = type
     # 详情
-    goods_data['detail'] = handleTable(names,params)
+    goods_data['detail'] = handleTable(names, params)
     # 图片
     pics = []
     for pic in html.selector.xpath('//*[@id="dt-tab"]/div/ul/li/@data-imgs').extract():
@@ -117,7 +140,10 @@ def goodsDetail(detail_url):
         pics.append(json.loads(pic)['original'])
 
     goods_data['pics'] = '|'.join(pics)
-    goods_data['storage'] = html.selector.xpath('//*[@id="mod-detail-bd"]/div[2]/div[11]/div/div/div/div[1]/div[2]/table/tr[1]/td[3]/span/em[1]/text()').extract()[0]
+    try:
+        goods_data['storage'] = html.selector.xpath('//*[@id="mod-detail-bd"]/div[2]/div[11]/div/div/div/div[1]/div[2]/table/tr[1]/td[3]/span/em[1]/text()').extract()[0]
+    except:
+        goods_data['storage'] = re.findall(r'\d+', html.xpath('//*[@id="mod-detail-bd"]/div[2]/div[12]/div/div/div[1]/div[2]/span/text()').extract()[0])[0]
 
     goods_data['lack_period'] = ''
     goods_data['created'] = int(time.time())
@@ -153,7 +179,11 @@ def parseOptional(url):
     return url_list
 
 if __name__ == '__main__':
-    # url = 'http://www.vipmro.com/product/587879'
-    url = 'https://s.1688.com/selloffer/offer_search.htm?priceStart=0.1&uniqfield=pic_tag_id&categoryId=1033835&n=y&filt=y#sm-filtbar'
-    # url = 'https://detail.1688.com/offer/520658508585.html?tracelog=p4p'
+    # 测试函数goodsUrlList
+    url = 'https://s.1688.com/selloffer/offer_search.htm?priceStart=0.1&uniqfield=pic_tag_id&categoryId=1033834&n=y&filt=y#sm-filtbar'
+    # url = 'https://s.1688.com/selloffer/--1033826.html?spm=a260b.7624510.1998298138.232.i7Asax'
     print goodsUrlList(url)
+
+    # 测试函数goodsDetail
+    url = 'https://detail.1688.com/offer/520658508585.html'
+    # print goodsDetail(url)

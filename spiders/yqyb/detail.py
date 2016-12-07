@@ -73,33 +73,18 @@ def goodsUrlList(home_url):
     import zlib
     for page in xrange(101):
         # 解析html
+        object_ids = ''
         try:
             d = zlib.decompressobj(16+zlib.MAX_WBITS)
             home_page = d.decompress(getHtmlByVPN(pre_url+str(page),http_type='https')).decode('gbk')
+            object_ids = re.search('object_ids.*?category_id',home_page).group(0)
             # 解析html
             # print home_page
         except Exception,e:
             print(Exception,e)
-        goods_id = re.findall(u'\d{11,15}', home_page)  # 拿到疑似ID的ID
-        goods_id = list(set(goods_id))  # 去重
-        print len(goods_id)
-        num = 0
-        for id in goods_id:
-            # 开头为1和2的不是产品ID
-            if id[0] == '2' or id[0] == '1':
-                continue
-            if 'https://detail.1688.com/offer/'+ id + '.html' not in urls:
-                urls.append('https://detail.1688.com/offer/'+ id + '.html')
-                num += 1
-                # try:
-                #     goodsDetail('https://detail.1688.com/offer/'+ id + '.html')
-                #     # print 'https://detail.1688.com/offer/'+ id + '.html'
-                # except Exception, e:
-                #     print(Exception, e)
-                #     print 'https://detail.1688.com/offer/' + id + '.html'
-        print '+ %d' % num
-        print '当前抓到了%d个链接' % len(urls)
-    print len(urls)
+        goods_id = re.findall('\d{6,20}', object_ids)
+        url_format = 'https://detail.1688.com/offer/{0}.html'
+        urls.extend(map(lambda x:url_format.format(x),set(goods_id)))
     return urls
 
 def goodsDetail(detail_url):

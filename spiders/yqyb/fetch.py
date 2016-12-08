@@ -54,7 +54,7 @@ def parseSeedUrl():
     table_outline = M('yqyb',table_name)
     table_seed = M('yqyb',table_seed_name)
     # 查询所有url
-    sql = 'select * from {0} order by id limit 1'.format(table_name)
+    sql = 'select * from {0} order by id'.format(table_name)
     table_outline.cursor.execute(sql)
     outline_data = table_outline.cursor.fetchall()
     for data in outline_data:

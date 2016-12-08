@@ -5,14 +5,15 @@
 
 @version: 1.0
 @author: kevin
-@license: Apache Licence 
+@license: Apache Licence
 @contact: liujiezhang@bupt.edu.cn
-@site: 
+@site:
 @software: PyCharm Community Edition
 @file: fetch.py
 @time: 16/11/26 下午5:21
 """
 import sys
+sys.path.append("..")
 import getopt
 from dataBase.mysql import M
 from detail import *
@@ -23,15 +24,16 @@ def parseOutline():
     解析类目函数入口
     :return: True or False
     '''
-    url = 'http://www.vipmro.com/'
+    # url = 'http://www.sssmro.com/'
     try:
         # 实例化 表
-        table_outline = M('test','vipmro_outline')
-    except Exception,e:
-        print(Exception,":",e)
+        table_outline = M('yqyb', 'yqyb_outline')
+    except Exception, e:
+        print(Exception, ":", e)
         return False
     # 抓取三级类目信息
-    outline_data = goodsOutline(url)
+    outline_data = goodsOutline()
+    print(len(outline_data))
     if not outline_data:
         print('Failed to parse outline, data is empty.')
         return False
@@ -47,12 +49,12 @@ def parseSeedUrl():
     :return:
     '''
     # 实例化 outline表
-    table_name = 'vipmro_outline'
-    table_seed_name = 'vipmro_url'
-    table_outline = M('test',table_name)
-    table_seed = M('test',table_seed_name)
+    table_name = 'yqyb_outline'
+    table_seed_name = 'yqyb_url'
+    table_outline = M('yqyb',table_name)
+    table_seed = M('yqyb',table_seed_name)
     # 查询所有url
-    sql = 'select * from {0} order by id limit 10'.format(table_name)
+    sql = 'select * from {0} order by id limit 1'.format(table_name)
     table_outline.cursor.execute(sql)
     outline_data = table_outline.cursor.fetchall()
     for data in outline_data:
@@ -64,7 +66,7 @@ def parseSeedUrl():
         insert_data = []
         for seed_url in seed_urls:
             # 先查询mysql中是否已经存在
-            sql = "select id from {0} where url='{1}' order by id limit 1".format(table_seed_name,seed_url)
+            sql = "select id from {0} where url='{1}' order by id".format(table_seed_name,seed_url)
             is_exist = table_seed.cursor.execute(sql)
             if is_exist:
                 continue
@@ -88,29 +90,34 @@ def parseDetail():
     解析详情函数入口
     :return:
     '''
-    table_seed_name = 'vipmro_url'
-    # 暂时存放到gov表
-    table_gov_name = 'vipmro_gov'
-    table_seed = M('test',table_seed_name)
-    table_gov = M('test',table_gov_name)
+    table_seed_name = 'yqyb_url'
+    table_gov_name = 'yqyb_gov'
+    table_seed = M('yqyb',table_seed_name)
+    table_gov = M('yqyb',table_gov_name)
     # 查询未入库种子
-    sql = "select a.id,a.url from {0} a where a.url not in (select source_url from {1} order by id)  order by id".format(table_seed_name,table_gov_name)
+    sql = "select a.id,a.url,a.first_grade,a.second_grade,a.third_grade from {0} a where a.url not in (select source_url from {1} order by id)  order by id limit 100".format(table_seed_name,table_gov_name)
     table_seed.cursor.execute(sql)
     seed_urls = table_seed.cursor.fetchall()
-    # 抓取详情
-    insert_data = []
-    for seed in seed_urls:
-        detail = goodsDetail(seed['url'])
-        insert_data.append(detail)
-    # 插入数据库
-    table_gov.insertAll(insert_data)
+    while seed_urls:
+        for seed in seed_urls:
+            print(seed['url'])
+            detail = goodsDetail(seed['url'])
+            detail['first_grade'] = seed['first_grade']
+            detail['second_grade'] = seed['second_grade']
+            detail['third_grade'] = seed['third_grade']
+            # 插入数据库
+            table_gov.insertOne(detail)
+        table_seed.commit()
+        seed_urls = []
+        table_seed.cursor.execute(sql)
+        seed_urls = table_seed.cursor.fetchall()
     # 关闭数据库连接
     table_seed.close()
     table_gov.close()
 
 def etl():
-    site = 'vipmro'
-    db_name = 'test'
+    site = 'yqyb'
+    db_name = 'yqyb'
     # gov表
     gov_name = site + '_gov'
     table_gov = M(db_name,gov_name)
@@ -118,17 +125,21 @@ def etl():
     iter_count = 500
     sql = 'select * from {0} where is_contrast=0 order by id limit {1}'.format(gov_name,iter_count)
     n = table_gov.cursor.execute(sql)
-    while n:
-        datas = table_gov.cursor.fetchall()
+    etl_func = ETL(db_name=db_name,site_name=site)
+    datas = table_gov.cursor.fetchall()
+    while datas:
+        print(list(datas)[0]['id'])
         # ETL清洗
-        ETL(db_name=db_name,site_name=site,data=datas).run()
+        etl_func.run(list(datas))
         # 继续查库
-        sql = 'select * from {0} where is_contrast=0 order by id limit {1}'.format(gov_name,iter_count)
+        table_gov.commit()
         n = table_gov.cursor.execute(sql)
+        datas = table_gov.cursor.fetchall()
+
     print('ETL process is done!')
     # 关闭数据库
     table_gov.close()
-    ETL.close()
+    etl_func.close()
 
 def Usage():
     '''
@@ -168,7 +179,7 @@ def main(argv):
             Version()
             sys.exit(0)
         elif o in ('-o', '--outline'):
-            parseOutline()
+            # parseOutline()
             sys.exit(0)
         elif o in ('-s','--seed',):
             parseSeedUrl()
@@ -182,4 +193,8 @@ def main(argv):
             sys.exit(3)
 
 if __name__ == '__main__':
-    main(sys.argv)
+    # main(sys.argv)
+    # etl()
+    parseOutline()
+    # parseSeedUrl()
+    # parseDetail()

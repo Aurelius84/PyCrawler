@@ -21,7 +21,7 @@ import time
 import json
 import re
 
-def goodsOutline(url):
+def goodsOutline():
     '''
     获取三级目录详情
     :param url:网站主页
@@ -30,6 +30,7 @@ def goodsOutline(url):
     # 存储各级分类信息
     # //*[@id="mod-catpanel-id"]/li[8]/div/div/div[1]/div/div[1]/div[2]/a[1]
     # //*[@id="mod-catpanel-id"]/li[8]/div/div/div[1]/div/div[2]/div[2]/a[1]
+    url = 'https://yqyb.1688.com/'
     outline_data = []
     # 解析页面
     body = getHtmlByVPN(url)
@@ -56,6 +57,22 @@ def goodsOutline(url):
         url_data['updated'] = int(time.time())
         # 保存
         outline_data.append(url_data)
+
+    # 补全剩下几个三级目录
+    urls_id = [141907,1425,141906,1031666,922,1032539,1032538]
+    third_grade = ['阀门','水泵','禁锢链接','输送设备','矿山施工设备','矿山输送设备','矿山装卸设备']
+    for j in range(len(urls_id)):
+        # 格式化数据
+        url_data = defaultdict()
+        url_data['url'] = 'https://s.1688.com/selloffer/offer_search.htm?priceStart=0.01&uniqfield=pic_tag_id&n=y&filt=y#sm-filtbar&categoryId={0}'.format(urls_id[j])
+        url_data['third_grade'] = third_grade[j]
+        url_data['second_grade'] = '矿山及其行业设备'
+        url_data['first_grade'] = '矿山及其行业设备'
+        url_data['created'] = int(time.time())
+        url_data['updated'] = int(time.time())
+        # 保存
+        outline_data.append(url_data)
+
     return outline_data
 
 
@@ -71,21 +88,23 @@ def goodsUrlList(home_url):
     pre_url = 'https://s.1688.com/selloffer/rpc_async_render.jsonp?categoryId={0}&n=y&filt=y&priceStart=0.1&qrwRedirectEnabled=false&uniqfield=pic_tag_id&templateConfigName=marketOfferresult&offset=8&pageSize=60&asyncCount=60&startIndex=0&pageOffset=2&async=true&enableAsync=true&rpcflag=new&_pageName_=market&beginPage='.format(url_id)
     # 解析html
     import zlib
-    for page in xrange(101):
+    for page in xrange(100):
         # 解析html
         object_ids = ''
         try:
             d = zlib.decompressobj(16+zlib.MAX_WBITS)
-            home_page = d.decompress(getHtmlByVPN(pre_url+str(page),http_type='https')).decode('gbk')
+            home_page = d.decompress(getHtmlByVPN(pre_url+str(page+1),http_type='https')).decode('gbk')
             object_ids = re.search('object_ids.*?category_id',home_page).group(0)
             # 解析html
             # print home_page
         except Exception,e:
             print(Exception,e)
         goods_id = re.findall('\d{6,20}', object_ids)
+        print('fetch {0} urls.'.format(len(goods_id)))
         url_format = 'https://detail.1688.com/offer/{0}.html'
         urls.extend(map(lambda x:url_format.format(x),set(goods_id)))
-    return urls
+
+    return list(set(urls))
 
 def goodsDetail(detail_url):
     '''
@@ -167,8 +186,8 @@ if __name__ == '__main__':
     # 测试函数goodsUrlList
     url = 'https://s.1688.com/selloffer/offer_search.htm?priceStart=0.1&uniqfield=pic_tag_id&categoryId=1033834&n=y&filt=y#sm-filtbar'
     # url = 'https://s.1688.com/selloffer/--1033826.html?spm=a260b.7624510.1998298138.232.i7Asax'
-    print goodsUrlList(url)
+    # print goodsUrlList(url)
 
     # 测试函数goodsDetail
-    url = 'https://detail.1688.com/offer/520658508585.html'
-    # print goodsDetail(url)
+    url = 'https://detail.1688.com/offer/534922977173.html'
+    print goodsDetail(url)

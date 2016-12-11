@@ -10,12 +10,17 @@
 @file: detail.py
 @time: 16/11/25 上午10:57
 """
-
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 from spiders.myfunc import *
+from selenium import webdriver
 from scrapy.http import HtmlResponse
 from collections import defaultdict
 import itertools
 import time
+import re
+
 
 def goodsOutline(url):
     '''
@@ -27,6 +32,8 @@ def goodsOutline(url):
     outline_data = []
     # 解析页面
     body = getHtmlFromJs(url)['content'].encode('utf-8')
+    print body
+    exit()
     html = HtmlResponse(url=url,body=body)
     # 一级类目名
     first_grade = html.selector.xpath('/html/body/div[3]/div/ul/li[1]/div/div[1]/ul/li/a/text()').extract()
@@ -64,6 +71,7 @@ def goodsUrlList(home_url):
     :param home_url: http://www.vipmro.com/search/?&categoryId=501110
     :return:url列表
     '''
+    '''
     # 所有条件下的列表
     all_group_list = parseOptional(home_url)
     # 保存所有goods的详情页url
@@ -78,6 +86,35 @@ def goodsUrlList(home_url):
             continue
         url_list.extend(urls)
     return url_list
+    '''
+    urls = []  # 存储种子url
+    driver = webdriver.Firefox()
+    driver.get(url)
+    path = '/html/body/div[7]/div[2]/a[@page-id="{0}"]'
+    time.sleep(3)
+    page = driver.page_source
+    html = HtmlResponse(url=url, body=str(page))
+    url_tmp = html.selector.xpath('/html/body/div[7]/div[1]/ul/li/div[2]/a/@href').extract()
+    urls.extend(url_tmp)
+    print len(urls)
+    num = int(re.findall(r'\d+', html.xpath('/html/body/div[6]/div/div[4]/span/text()').extract()[0])[0])
+    if num <= 15:  # 只有一页
+        return urls
+    else:
+        import math
+        page_num = int(math.ceil(num / 15.0))
+        for i in range(1, page_num):
+            # 模拟翻页动作
+            driver.find_element_by_xpath(path.format(1 + i)).click()
+            time.sleep(2)
+            # 提取html语句，解析
+            page = driver.page_source
+            html = HtmlResponse(url=url, body=str(page))
+            url_tmp = html.selector.xpath('/html/body/div[7]/div[1]/ul/li/div[2]/a/@href').extract()
+            urls.extend(url_tmp)
+    print len(urls)
+    driver.quit()
+    return urls
 
 def goodsDetail(detail_url):
     '''
@@ -142,3 +179,4 @@ if __name__ == '__main__':
     # url = 'http://www.vipmro.com/search/?&categoryId=501110'
     url = 'http://www.vipmro.com/'
     goodsOutline(url)
+

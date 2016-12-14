@@ -27,7 +27,7 @@ def parseOutline():
     # url = 'http://www.sssmro.com/'
     try:
         # 实例化 表
-        table_outline = M('test', 'hc360_outline')
+        table_outline = M('hc360', 'hc360_outline')
     except Exception, e:
         print(Exception, ":", e)
         return False
@@ -51,8 +51,8 @@ def parseSeedUrl():
     # 实例化 outline表
     table_name = 'hc360_outline'
     table_seed_name = 'hc360_url'
-    table_outline = M('test',table_name)
-    table_seed = M('test',table_seed_name)
+    table_outline = M('hc360',table_name)
+    table_seed = M('hc360',table_seed_name)
     # 查询所有url
     sql = 'select * from {0} order by id'.format(table_name)
     table_outline.cursor.execute(sql)
@@ -92,8 +92,8 @@ def parseDetail():
     '''
     table_seed_name = 'hc360_url'
     table_gov_name = 'hc360_gov'
-    table_seed = M('test',table_seed_name)
-    table_gov = M('test',table_gov_name)
+    table_seed = M('hc360',table_seed_name)
+    table_gov = M('hc360',table_gov_name)
     # 查询未入库种子
     sql = "select a.id,a.url,a.first_grade,a.second_grade,a.third_grade from {0} a where a.url not in (select source_url from {1} order by id)  order by id limit 100".format(table_seed_name,table_gov_name)
     table_seed.cursor.execute(sql)
@@ -117,7 +117,7 @@ def parseDetail():
 
 def etl():
     site = 'hc360'
-    db_name = 'test'
+    db_name = 'hc360'
     # gov表
     gov_name = site + '_gov'
     table_gov = M(db_name,gov_name)

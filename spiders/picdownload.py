@@ -24,6 +24,8 @@ python 版本为 2.7
 xls_path = u'/Users/Kevin/Desktop/数据/sssmro网站数据.xls'
 # 图片保存文件夹路径
 pic_root = xls_path.split(u'.')[0]
+print pic_root
+exit()
 # 自动创建
 if not os.path.exists(pic_root):
     os.mkdir(pic_root)

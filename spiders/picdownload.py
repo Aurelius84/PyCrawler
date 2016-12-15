@@ -21,7 +21,7 @@ python 版本为 2.7
 '''
 
 # 数据路径
-xls_path = u'/Users/Kevin/Desktop/数据/sssmro网站数据.xls'
+xls_path = u'C:\\Users\\zw\\Desktop\\图片地址\\慧聪网图片地址3.xlsx'
 # 图片保存文件夹路径
 pic_root = xls_path.split(u'.')[0]
 # 自动创建
@@ -32,15 +32,22 @@ if not os.path.exists(pic_root):
 data = pd.read_excel(xls_path)
 # 获取pics网址
 pic_urls = set()
+data_pics = list(data['pics'])
 for i in xrange(len(data['pics'])):
-    pics = data['pics'][i].split(u'|')
-    pic_urls |= set(pics)
+    try:
+        pics = data['pics'][i].split(u'|')
+        pic_urls |= set(pics)
+    except:
+        # print i   # 空行
+        continue
+
+# pic_urls = set(data_pics)
 
 if not pic_urls:
     exit("no pics need to download")
 
 # 去除已经下载过的链接
-sample = pic_urls.pop()
+sample = str(pic_urls.pop())
 pre_url = '/'.join(sample.split(u'/')[:-1])
 
 # 检查当前路径下是否已经存在部分图片
@@ -60,28 +67,29 @@ pic_urls = list(pic_urls)
 for i in xrange(N):
     # 图片地址
     pic_url = pic_urls.pop(0)
-
     # 判断是否下载过
-    token = pic_url.split('/')[-1]
+    # token = pic_url.split('/')[-1]
+    token = pic_url.split('/')[-1].split('.')[0] + '.jpg'
     if token in exist_pics:
         continue
 
-    pic_url = http_str + pic_url
+    # pic_url = http_str + pic_url
     # 图片后缀
     pic_name = pic_url.split(u'/')[-1]
+    # pic_name = pic_url.split(u'/')[-1].split('.')[0] + '.jpg' # 百卓的操作
     # 图片保存地址
     pic_path = pic_root + u'/' + pic_name
-
-    pic_data = getHtmlByVPN(pic_url,http_type=http_type)
-    # 保存图片
-    f = open(pic_path,'wb')
-    f.write(pic_data)
-    f.close()
-    print('save %s successfully'%pic_url)
-    if i%100==0:
-        print('processing: %0.1f ....'%(float(i)/N))
-
-
-
-
+    print pic_url
+    try:
+        pic_data = getHtmlByVPN(pic_url, http_type=http_type)
+        # 保存图片
+        f = open(pic_path,'wb')
+        f.write(pic_data)
+        f.close()
+        print('save %s successfully'%pic_url)
+        if i%100==0:
+            print('processing: %0.3f ....'%(float(i)/N))
+    except:
+        print('There is an error rate...')
+        continue
 

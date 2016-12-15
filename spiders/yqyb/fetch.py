@@ -195,6 +195,6 @@ def main(argv):
 if __name__ == '__main__':
     # main(sys.argv)
     # etl()
-    parseOutline()
-    # parseSeedUrl()
-    # parseDetail()
+    # parseOutline()
+    parseSeedUrl()
+    parseDetail()

@@ -81,8 +81,10 @@ def parseSeedUrl():
             seed_data['created'] = int(time.time())
             seed_data['updated'] = int(time.time())
             insert_data.append(seed_data)
+            table_seed.insertOne(seed_data)
+        print len(insert_data)
         # 插入数据库
-        table_seed.insertAll(insert_data)
+        #table_seed.insertAll(insert_data)
     # 关闭数据库
     table_seed.close()
     table_outline.close()
@@ -100,26 +102,27 @@ def parseDetail():
     sql = "select a.id,a.url from {0} a where a.url not in (select source_url from {1} order by id)  order by id".format(table_seed_name,table_gov_name)
     table_seed.cursor.execute(sql)
     seed_urls = table_seed.cursor.fetchall()
+    number = 0
     for seed in seed_urls:
         time.sleep(random.randint(1, 3))
         print seed['url']
         flag = True
         start = time.time()
-        while(flag):
-            try:
-                detail = goodsDetail(seed['url'])
-                flag = False
-            except:
-                flag = True
-                time.sleep(random.randint(0, 1))
-        print detail
+        try:
+            detail = goodsDetail(seed['url'])
+        except:
+            print 'There is an error...'
+            number += 1
+
+            continue
         end = time.time()
         print('抓取解析本条数据耗时 %f sec.' % (end- start))
         # 插入数据库
-        table_gov.insertOne(detail)
+        table_gov.insertAll(detail)
     # 关闭数据库连接
     table_seed.close()
     table_gov.close()
+    print ('有问题的数据有%d条' % number)
 
 def etl():
     site = 'deppre'
@@ -202,6 +205,6 @@ if __name__ == '__main__':
     # main(sys.argv)
     # etl()
     # parseOutline()  # 抓取三级目录首页链接
-    parseSeedUrl()    # 抓取所有产品链接
-    # parseDetail()   # 抓取所有产品详情
+    # parseSeedUrl()    # 抓取所有产品链接
+    parseDetail()   # 抓取所有产品详情
 

@@ -89,8 +89,8 @@ def goodsUrlList(home_url):
             except:
                 break
         page_url.append(home_url[:-5] + '-min0-max0-attr0-' + str(i+1) + '-goods_id-DESC.html')
-        body = getHtml(page_url[i+1])
-        html = HtmlResponse(url=page_url[i+1], body=str(body))
+        body = getHtml(page_url[i + 1])
+        html = HtmlResponse(url=page_url[i + 1], body=str(body))
     print len(url_list)
     return url_list
 
@@ -158,9 +158,19 @@ if __name__ == '__main__':
 
     # 测试函数goodsDetail(detail_url)
 
-    url = 'http://www.deppre.cn/goods-750.html'
-    # detail = goodsDetail(url)
-    # print detail
+    url = 'http://www.deppre.cn/goods-1852.html'
+    url = 'http://www.deppre.cn/goods-697.html'
+    url = 'http://www.deppre.cn/goods-50.html'
+    url = 'http://www.deppre.cn/goods-207.html'
+    url = 'http://www.deppre.cn/goods-206.html'
+    url = 'http://www.deppre.cn/goods-205.html'
+    url = 'http://www.deppre.cn/goods-204.html'
+
+
+
+    detail = goodsDetail(url)
+    print type(detail)
+    print detail
 
     # 测试goodsOutline()
     # url = 'http://www.deppre.cn/'
@@ -173,5 +183,5 @@ if __name__ == '__main__':
     # goodsOutline(url)
 
     # 测试函数goodsUrlList(home_url)
-    url = 'http://www.deppre.cn/category-124-b0.html'
-    goodsUrlList(url)
+    url = 'http://www.deppre.cn/category-288-b0.html'
+    urllist = goodsUrlList(url)

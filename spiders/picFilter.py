@@ -22,16 +22,16 @@ python 版本为 2.7
 '''
 
 # 数据路径
-xls_path = u'D:\\git\\慧聪网图片地址3.xlsx'
+xls_path = u'C:\\Users\\zw\\Desktop\\图片地址\\test.xlsx'
 # 图片保存文件夹路径
 #pic_root = xls_path.split(u'.')[0]
-pic_root = u'D:\\git\\test\\test'
+pic_root = u'C:\\Users\\zw\\Desktop\\图片地址\\慧聪网图片地址3'
 # 文件名后缀
 suffix = u'_filtered'
-pic_root_filtered = str(pic_root) + str(suffix)
+pic_root_filtered = pic_root + suffix
 # 自动创建
-#if not os.path.exists(pic_root):
-#   os.mkdir(pic_root)
+if not os.path.exists(pic_root):
+    os.mkdir(pic_root)
 
 if not os.path.exists(pic_root_filtered):
     os.mkdir(pic_root_filtered)
@@ -68,7 +68,8 @@ if sample.find(u'http') == -1:
 
 # 下载图片
 pic_urls = list(pic_urls)
-
+# 记录未找到图片
+count = 0
 for i in xrange(N):
     # 图片地址
     pic_url = pic_urls.pop(0)
@@ -77,7 +78,7 @@ for i in xrange(N):
     token = pic_url.split('/')[-1]
     if token in exist_pics:
         # 拷贝该文件到新文件夹下
-        print token
+        #print token
         src_pic_path = os.path.join(pic_root,token)
         des_pic_path = os.path.join(pic_root_filtered,token)
         #print "src:" + src_pic_path
@@ -88,7 +89,8 @@ for i in xrange(N):
         continue
 
     pic_url = http_str + pic_url
-    print pic_url
+    print pic_url + 'not found'
+    count += 1
     continue
     # 图片后缀
     pic_name = pic_url.split(u'/')[-1]
@@ -106,7 +108,7 @@ for i in xrange(N):
     if i%100==0:
         print('processing: %0.1f ....'%(float(i)/N))
 
-
+print '{0} pics not found'.format(count)
 
 
 

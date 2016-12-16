@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
 
 from PIL import Image
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 import os
 #from PIL import PixcelAcess
 
 def scanPic(filename):
-	im = Image.open(filename)
+	try:
+		im = Image.open(filename)
+	except:
+		print filename + ' cannot open'
+		return True
+	#print filename
 	backcolor = im.getpixel((0,0))
 	#print 'backcolor :' + str(backcolor)
 	#print im.size
@@ -44,13 +51,22 @@ def scanPic(filename):
 			#deletefile(filename)
 			break
 	#print str(masslines) +':' + str(brokenpic)
+	if brokenpic:
+		return True
+	else:
+		return False
 
 def explore(dir):
+	cnt = 0
 	for root,dir,files in os.walk(dir):
 		for file in files:
 			filename = os.path.join(root,file)
 			#print filename
 			scanPic(filename)
+			if scanPic(filename):
+				cnt += 1
+	print 'total broken:' + str(cnt)
+
 
 def deletefile(filename):
 	'''
@@ -60,9 +76,10 @@ def deletefile(filename):
 	#print type(filename)
 	os.remove(filename)
 	print filename + ' deleted'
+
 if __name__ == '__main__':
 	#filename = u'D:\\git\\PyCrawler\\brokenPicFilter\\慧聪图片数据\\3.jpg'
-	dir = u'D:\\git\\PyCrawler\\brokenPicFilter\\慧聪图片数据'
+	dir = u'C:\\Users\\zw\\Desktop\\图片地址\\慧聪网图片地址1'
 	explore(dir)
 	#scanPic(filename)
 	#deletefile(filename)

@@ -77,7 +77,7 @@ def goodsUrlList(home_url):
     # 拿到该三级目录下一共有多少种产品
     num = int(html.xpath('//*[@id="pinpai"]/a[1]/text()').extract()[0][3:-1])
     # 40个产品一页
-    page_num = int(math.ceil(num / 40))
+    page_num = int(math.ceil(num / 40.0))
     page_url = []
     page_url.append(home_url)
     for i in range(0, page_num):
@@ -85,7 +85,7 @@ def goodsUrlList(home_url):
             try:
                 if not html.xpath('/html/body/div[5]/form[1]/ul/li['+str(j)+']/p[2]/span[1]/text()').extract()[0] == '询价':
                     url_list.append('http://www.deppre.cn/' + html.xpath('/html/body/div[5]/form[1]/ul/li['+str(j)+']/a/@href').extract()[0])
-                    print('http://www.deppre.cn/' + html.xpath('/html/body/div[5]/form[1]/ul/li['+str(j)+']/a/@href').extract()[0])
+                    # print('http://www.deppre.cn/' + html.xpath('/html/body/div[5]/form[1]/ul/li['+str(j)+']/a/@href').extract()[0])
             except:
                 break
         page_url.append(home_url[:-5] + '-min0-max0-attr0-' + str(i+1) + '-goods_id-DESC.html')
@@ -159,8 +159,8 @@ if __name__ == '__main__':
     # 测试函数goodsDetail(detail_url)
 
     url = 'http://www.deppre.cn/goods-750.html'
-    detail = goodsDetail(url)
-    print detail
+    # detail = goodsDetail(url)
+    # print detail
 
     # 测试goodsOutline()
     # url = 'http://www.deppre.cn/'
@@ -173,5 +173,5 @@ if __name__ == '__main__':
     # goodsOutline(url)
 
     # 测试函数goodsUrlList(home_url)
-    # url = 'http://www.deppre.cn/category-125-b0.html'
-    # goodsUrlList(url)
+    url = 'http://www.deppre.cn/category-124-b0.html'
+    goodsUrlList(url)

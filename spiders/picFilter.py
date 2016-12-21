@@ -26,13 +26,11 @@ xls_path = u'C:\\Users\\zw\\Desktop\\图片地址\\test.xlsx'
 # 图片保存文件夹路径
 #pic_root = xls_path.split(u'.')[0]
 pic_root = u'C:\\Users\\zw\\Desktop\\图片地址\\慧聪网图片地址3'
+pic_root1 = u'D:\\git\\test\\test1'
 # 文件名后缀
 suffix = u'_filtered'
 pic_root_filtered = pic_root + suffix
 # 自动创建
-if not os.path.exists(pic_root):
-    os.mkdir(pic_root)
-
 if not os.path.exists(pic_root_filtered):
     os.mkdir(pic_root_filtered)
 
@@ -47,13 +45,8 @@ for i in xrange(len(data['pics'])):
 if not pic_urls:
     exit("no pics need to download")
 
-# 去除已经下载过的链接
-sample = pic_urls.pop()
-#print sample
-
-pre_url = '/'.join(sample.split(u'/')[:-1])
-
 # 检查当前路径下是否已经存在部分图片
+#exist_pics = set(os.listdir(pic_root))|set(os.listdir(pic_root1))
 exist_pics = set(os.listdir(pic_root))
 
 N = len(pic_urls)
